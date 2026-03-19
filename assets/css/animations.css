@@ -1,0 +1,74 @@
+:root {
+    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@keyframes drift {
+    0%, 100% {
+        transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+        transform: translate3d(0, -18px, 0) rotate(8deg);
+    }
+}
+
+@keyframes floatUp {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(0, -14px, 0);
+    }
+}
+
+@keyframes borderShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes glowSweep {
+    0%, 100% {
+        opacity: 0.24;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.48;
+        transform: scale(1.08);
+    }
+}
+
+.hero-wave {
+    animation: drift 16s ease-in-out infinite;
+}
+
+.hero-wave--slow {
+    animation-duration: 18s;
+}
+
+.float-slow {
+    animation: floatUp 6s ease-in-out infinite;
+}
+
+.float-fast {
+    animation: floatUp 4.2s ease-in-out infinite;
+}
+
+.glow-border-animated::before {
+    background-size: 200% 200%;
+    animation: borderShift 6s ease infinite;
+}
+
+.travel-media::before,
+.travel-media::after {
+    transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.travel-card:hover .travel-media::after {
+    animation: glowSweep 1.6s ease-in-out infinite;
+}
