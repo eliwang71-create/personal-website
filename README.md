@@ -288,7 +288,7 @@ LIMIT 20;
 如果你也补了属地字段，可以这样查完整访问画像：
 
 ```sql
-SELECT id, ip, path, country, region, city, device_type, os, browser, visited_at
+SELECT id, ip, device_model, path, device_type, os, os_version, browser, browser_version, country, region, city, visited_at
 FROM visit_logs
 ORDER BY id DESC
 LIMIT 20;

@@ -275,15 +275,16 @@ function parseUserAgent(userAgent = "", clientHints = {}) {
     const normalizedHints = normalizeClientHints(clientHints);
     const os = mapClientHintsPlatform(normalizedHints.platform) || detectOs(userAgent);
     const browser = detectBrowser(userAgent);
+    const deviceType = detectDeviceType(userAgent);
     const rawDeviceModel = normalizedHints.model || parseDeviceModelFromUserAgent(userAgent, os);
-    const { deviceModel, deviceModelRaw } = resolveDeviceModel(rawDeviceModel);
+    const { deviceModel, deviceModelRaw } = resolveDeviceModel(rawDeviceModel, { os, deviceType });
 
     return {
         browser,
         browserVersion: parseBrowserVersionFromClientHints(browser, normalizedHints) || parseBrowserVersionFromUserAgent(userAgent, browser),
         os,
         osVersion: normalizeOsVersion(os, normalizedHints.platformVersion) || parseOsVersionFromUserAgent(userAgent, os),
-        deviceType: detectDeviceType(userAgent),
+        deviceType,
         deviceModel,
         deviceModelRaw
     };
