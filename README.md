@@ -142,6 +142,15 @@ CREATE TABLE visit_logs (
 );
 ```
 
+如果你想把设备类型、系统和浏览器单独存下来，在线上已经支持这几个字段。对现有表执行一次：
+
+```sql
+ALTER TABLE visit_logs
+ADD COLUMN device_type VARCHAR(32) NULL,
+ADD COLUMN os VARCHAR(32) NULL,
+ADD COLUMN browser VARCHAR(32) NULL;
+```
+
 3. 在 Vercel 项目环境变量中配置：
 
 - `MYSQL_HOST`
@@ -164,6 +173,24 @@ CREATE TABLE visit_logs (
 
 ```sql
 SELECT id, path, visited_at
+FROM visit_logs
+ORDER BY id DESC
+LIMIT 20;
+```
+
+看完整访问和设备原始信息：
+
+```sql
+SELECT id, ip, path, referer, user_agent, visited_at
+FROM visit_logs
+ORDER BY id DESC
+LIMIT 20;
+```
+
+如果你已经给表补了设备字段，可以这样查：
+
+```sql
+SELECT id, ip, path, device_type, os, browser, visited_at
 FROM visit_logs
 ORDER BY id DESC
 LIMIT 20;

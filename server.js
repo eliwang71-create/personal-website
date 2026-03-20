@@ -8,6 +8,69 @@ const DB_NAME = process.env.DB_NAME || "personal_website";
 const DB_USER = process.env.DB_USER || "root";
 const DB_PASSWORD = process.env.DB_PASSWORD || "";
 
+function formatShanghaiDateTime(date = new Date()) {
+    const formatter = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    });
+
+    return formatter.format(date).replace(" ", " ");
+}
+
+function detectBrowser(userAgent = "") {
+    if (/edg\//i.test(userAgent)) {
+        return "Edge";
+    }
+    if (/chrome\//i.test(userAgent) && !/edg\//i.test(userAgent)) {
+        return "Chrome";
+    }
+    if (/safari\//i.test(userAgent) && !/chrome\//i.test(userAgent)) {
+        return "Safari";
+    }
+    if (/firefox\//i.test(userAgent)) {
+        return "Firefox";
+    }
+    if (/opr\//i.test(userAgent) || /opera/i.test(userAgent)) {
+        return "Opera";
+    }
+    return "Unknown";
+}
+
+function detectOs(userAgent = "") {
+    if (/iphone|ipad|ipod/i.test(userAgent)) {
+        return "iOS";
+    }
+    if (/android/i.test(userAgent)) {
+        return "Android";
+    }
+    if (/mac os x/i.test(userAgent)) {
+        return "macOS";
+    }
+    if (/windows nt/i.test(userAgent)) {
+        return "Windows";
+    }
+    if (/linux/i.test(userAgent)) {
+        return "Linux";
+    }
+    return "Unknown";
+}
+
+function detectDeviceType(userAgent = "") {
+    if (/ipad|tablet/i.test(userAgent)) {
+        return "Tablet";
+    }
+    if (/mobile|iphone|android/i.test(userAgent)) {
+        return "Mobile";
+    }
+    return "Desktop";
+}
+
 function sendJson(response, statusCode, payload) {
     response.writeHead(statusCode, {
         "Content-Type": "application/json; charset=utf-8",
@@ -47,8 +110,8 @@ function getClientIp(request) {
 
 function insertVisit(record) {
     const sql = `
-INSERT INTO visit_logs (ip, user_agent, path, referer)
-VALUES (${sqlEscape(record.ip)}, ${sqlEscape(record.userAgent)}, ${sqlEscape(record.path)}, ${sqlEscape(record.referer)});
+INSERT INTO visit_logs (ip, user_agent, path, referer, visited_at)
+VALUES (${sqlEscape(record.ip)}, ${sqlEscape(record.userAgent)}, ${sqlEscape(record.path)}, ${sqlEscape(record.referer)}, ${sqlEscape(record.visitedAt)});
 `;
 
     const args = ["-u", DB_USER, DB_NAME];
@@ -107,11 +170,16 @@ const server = http.createServer(async (request, response) => {
     request.on("end", async () => {
         try {
             const body = rawBody ? JSON.parse(rawBody) : {};
+            const userAgent = request.headers["user-agent"] || "unknown";
             const record = {
                 ip: getClientIp(request),
-                userAgent: request.headers["user-agent"] || "unknown",
+                userAgent,
                 path: body.path || "/",
-                referer: request.headers.referer || body.referer || ""
+                referer: request.headers.referer || body.referer || "",
+                visitedAt: formatShanghaiDateTime(),
+                browser: detectBrowser(userAgent),
+                os: detectOs(userAgent),
+                deviceType: detectDeviceType(userAgent)
             };
 
             await insertVisit(record);
