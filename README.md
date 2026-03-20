@@ -193,6 +193,12 @@ ADD COLUMN city VARCHAR(128) NULL;
 - https://vercel.com/docs/headers/request-headers
 - https://vercel.com/kb/guide/geo-ip-headers-geolocation-vercel-functions
 
+目前项目也会默认忽略一部分明显的自动化流量，例如：
+
+- `vercel-screenshot/1.0`
+- `HeadlessChrome/...`
+- 常见 `bot / crawler / spider / preview` 标识
+
 3. 在 Vercel 项目环境变量中配置：
 
 - `MYSQL_HOST`

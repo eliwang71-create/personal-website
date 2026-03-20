@@ -371,6 +371,33 @@ function getClientIp(request) {
     return normalizeIp(request.socket.remoteAddress || "unknown");
 }
 
+function shouldIgnoreVisit(userAgent = "", referer = "") {
+    const normalizedUserAgent = String(userAgent || "").trim();
+    const normalizedReferer = String(referer || "").trim();
+
+    if (!normalizedUserAgent) {
+        return true;
+    }
+
+    if (/^vercel-screenshot\/\d+/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    if (/HeadlessChrome/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    if (/bot|crawler|spider|preview/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    if (/vercel\.app\/?$/i.test(normalizedReferer) && /^vercel-screenshot\/\d+/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    return false;
+}
+
 function runMysql(sql) {
     const args = ["-u", DB_USER, DB_NAME];
     const env = { ...process.env };
@@ -623,6 +650,13 @@ const server = http.createServer(async (request, response) => {
         try {
             const body = rawBody ? JSON.parse(rawBody) : {};
             const userAgent = request.headers["user-agent"] || "unknown";
+            const referer = request.headers.referer || body.referer || "";
+
+            if (shouldIgnoreVisit(userAgent, referer)) {
+                sendJson(response, 200, { ok: true, ignored: true });
+                return;
+            }
+
             const ip = getClientIp(request);
             const clientHints = body.clientHints;
             const { country, region, city } = await getGeoLocation(request, ip);
@@ -631,7 +665,7 @@ const server = http.createServer(async (request, response) => {
                 ip,
                 userAgent,
                 path: body.path || "/",
-                referer: request.headers.referer || body.referer || "",
+                referer,
                 visitedAt: formatShanghaiDateTime(),
                 browser,
                 browserVersion,

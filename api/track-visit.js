@@ -472,6 +472,33 @@ function getClientIp(req) {
     return normalizeIp(req.socket?.remoteAddress || "unknown");
 }
 
+function shouldIgnoreVisit(userAgent = "", referer = "") {
+    const normalizedUserAgent = String(userAgent || "").trim();
+    const normalizedReferer = String(referer || "").trim();
+
+    if (!normalizedUserAgent) {
+        return true;
+    }
+
+    if (/^vercel-screenshot\/\d+/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    if (/HeadlessChrome/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    if (/bot|crawler|spider|preview/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    if (/vercel\.app\/?$/i.test(normalizedReferer) && /^vercel-screenshot\/\d+/i.test(normalizedUserAgent)) {
+        return true;
+    }
+
+    return false;
+}
+
 async function insertVisitRecord(db, record) {
     try {
         await db.execute(
@@ -577,6 +604,12 @@ module.exports = async (req, res) => {
         const path = req.body?.path || "/";
         const referer = req.headers.referer || req.body?.referer || "";
         const userAgent = req.headers["user-agent"] || "unknown";
+
+        if (shouldIgnoreVisit(userAgent, referer)) {
+            res.status(200).json({ ok: true, ignored: true });
+            return;
+        }
+
         const ip = getClientIp(req);
         const visitedAt = formatShanghaiDateTime();
         const clientHints = req.body?.clientHints;
