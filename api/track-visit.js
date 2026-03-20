@@ -85,11 +85,111 @@ function decodeGeoHeader(value = "") {
     }
 }
 
-function getGeoLocation(req) {
+function getGeoLocationFromHeaders(req) {
     return {
         country: decodeGeoHeader(req.headers["x-vercel-ip-country"]),
         region: decodeGeoHeader(req.headers["x-vercel-ip-country-region"]),
         city: decodeGeoHeader(req.headers["x-vercel-ip-city"])
+    };
+}
+
+function normalizeIp(ip = "") {
+    if (typeof ip !== "string") {
+        return "";
+    }
+
+    const normalized = ip.trim();
+    if (!normalized) {
+        return "";
+    }
+
+    if (normalized.startsWith("::ffff:")) {
+        return normalized.slice(7);
+    }
+
+    return normalized;
+}
+
+function isPrivateIp(ip = "") {
+    const normalized = normalizeIp(ip).toLowerCase();
+
+    if (!normalized) {
+        return true;
+    }
+
+    return (
+        normalized === "unknown" ||
+        normalized === "::1" ||
+        normalized === "localhost" ||
+        normalized.startsWith("10.") ||
+        normalized.startsWith("192.168.") ||
+        normalized.startsWith("127.") ||
+        normalized.startsWith("169.254.") ||
+        /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalized) ||
+        normalized.startsWith("fc") ||
+        normalized.startsWith("fd") ||
+        normalized.startsWith("fe80:")
+    );
+}
+
+function hasDetailedGeo(geo = {}) {
+    return Boolean(geo.country && geo.region && geo.city);
+}
+
+async function fetchGeoFromIpApi(ip) {
+    const normalizedIp = normalizeIp(ip);
+
+    if (!normalizedIp || isPrivateIp(normalizedIp)) {
+        return { country: null, region: null, city: null };
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2500);
+
+    try {
+        const response = await fetch(`https://ipapi.co/${encodeURIComponent(normalizedIp)}/json/`, {
+            headers: {
+                Accept: "application/json",
+                "User-Agent": "personal-website-ip-fallback/1.0"
+            },
+            signal: controller.signal
+        });
+
+        if (!response.ok) {
+            throw new Error(`ipapi status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data?.error) {
+            throw new Error(data.reason || "ipapi error");
+        }
+
+        return {
+            country: data.country_name || data.country || null,
+            region: data.region || null,
+            city: data.city || null
+        };
+    } catch (error) {
+        console.warn("[track-visit] ipapi fallback failed:", error.message);
+        return { country: null, region: null, city: null };
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+async function getGeoLocation(req, ip) {
+    const geoFromHeaders = getGeoLocationFromHeaders(req);
+    if (hasDetailedGeo(geoFromHeaders)) {
+        return geoFromHeaders;
+    }
+
+    const geoFromFallback = await fetchGeoFromIpApi(ip);
+
+    return {
+        country: geoFromHeaders.country || geoFromFallback.country,
+        region: geoFromHeaders.region || geoFromFallback.region,
+        city: geoFromHeaders.city || geoFromFallback.city
     };
 }
 
@@ -129,15 +229,15 @@ function getPool() {
 function getClientIp(req) {
     const forwarded = req.headers["x-forwarded-for"];
     if (typeof forwarded === "string" && forwarded.trim()) {
-        return forwarded.split(",")[0].trim();
+        return normalizeIp(forwarded.split(",")[0].trim());
     }
 
     const realIp = req.headers["x-real-ip"];
     if (typeof realIp === "string" && realIp.trim()) {
-        return realIp.trim();
+        return normalizeIp(realIp.trim());
     }
 
-    return req.socket?.remoteAddress || "unknown";
+    return normalizeIp(req.socket?.remoteAddress || "unknown");
 }
 
 async function insertVisitRecord(db, record) {
@@ -205,7 +305,7 @@ module.exports = async (req, res) => {
         const ip = getClientIp(req);
         const visitedAt = formatShanghaiDateTime();
         const { browser, os, deviceType } = parseUserAgent(userAgent);
-        const { country, region, city } = getGeoLocation(req);
+        const { country, region, city } = await getGeoLocation(req, ip);
 
         await insertVisitRecord(db, {
             ip,

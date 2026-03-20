@@ -160,7 +160,7 @@ ADD COLUMN region VARCHAR(64) NULL,
 ADD COLUMN city VARCHAR(128) NULL;
 ```
 
-线上部署在 Vercel 时，会优先读取官方地理请求头：
+线上部署在 Vercel 时，会优先读取官方地理请求头；如果请求头里没有完整的国家 / 省州 / 城市信息，会再用 `ipapi.co` 做一次免费兜底：
 
 - `x-vercel-ip-country`
 - `x-vercel-ip-country-region`
