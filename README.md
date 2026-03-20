@@ -159,6 +159,13 @@ ADD COLUMN device_model VARCHAR(128) NULL,
 ADD COLUMN os_version VARCHAR(64) NULL;
 ```
 
+如果你想同时保留设备原始型号码，再补 1 列：
+
+```sql
+ALTER TABLE visit_logs
+ADD COLUMN device_model_raw VARCHAR(128) NULL;
+```
+
 如果你还想把浏览器版本也存下来，再补 1 列：
 
 ```sql

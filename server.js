@@ -1,5 +1,6 @@
 const http = require("http");
 const { spawn } = require("child_process");
+const { resolveDeviceModel } = require("./lib/device-models");
 
 const HOST = process.env.TRACK_HOST || "127.0.0.1";
 const PORT = Number(process.env.TRACK_PORT || 3000);
@@ -280,6 +281,8 @@ function parseUserAgent(userAgent = "", clientHints = {}) {
     const normalizedHints = normalizeClientHints(clientHints);
     const os = mapClientHintsPlatform(normalizedHints.platform) || detectOs(userAgent);
     const browser = detectBrowser(userAgent);
+    const rawDeviceModel = normalizedHints.model || parseDeviceModelFromUserAgent(userAgent, os);
+    const { deviceModel, deviceModelRaw } = resolveDeviceModel(rawDeviceModel);
 
     return {
         browser,
@@ -287,7 +290,8 @@ function parseUserAgent(userAgent = "", clientHints = {}) {
         os,
         osVersion: normalizeOsVersion(os, normalizedHints.platformVersion) || parseOsVersionFromUserAgent(userAgent, os),
         deviceType: detectDeviceType(userAgent),
-        deviceModel: normalizedHints.model || parseDeviceModelFromUserAgent(userAgent, os)
+        deviceModel,
+        deviceModelRaw
     };
 }
 
@@ -411,6 +415,7 @@ INSERT INTO visit_logs (
     os,
     os_version,
     device_model,
+    device_model_raw,
     browser,
     browser_version,
     country,
@@ -427,6 +432,7 @@ VALUES (
     ${sqlEscape(record.os)},
     ${sqlEscape(record.osVersion)},
     ${sqlEscape(record.deviceModel)},
+    ${sqlEscape(record.deviceModelRaw)},
     ${sqlEscape(record.browser)},
     ${sqlEscape(record.browserVersion)},
     ${sqlEscape(record.country)},
@@ -620,7 +626,7 @@ const server = http.createServer(async (request, response) => {
             const ip = getClientIp(request);
             const clientHints = body.clientHints;
             const { country, region, city } = await getGeoLocation(request, ip);
-            const { browser, browserVersion, os, osVersion, deviceType, deviceModel } = parseUserAgent(userAgent, clientHints);
+            const { browser, browserVersion, os, osVersion, deviceType, deviceModel, deviceModelRaw } = parseUserAgent(userAgent, clientHints);
             const record = {
                 ip,
                 userAgent,
@@ -633,6 +639,7 @@ const server = http.createServer(async (request, response) => {
                 osVersion,
                 deviceType,
                 deviceModel,
+                deviceModelRaw,
                 country,
                 region,
                 city

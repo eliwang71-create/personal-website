@@ -1,4 +1,5 @@
 const mysql = require("mysql2/promise");
+const { resolveDeviceModel } = require("../lib/device-models");
 
 let pool;
 
@@ -274,6 +275,8 @@ function parseUserAgent(userAgent = "", clientHints = {}) {
     const normalizedHints = normalizeClientHints(clientHints);
     const os = mapClientHintsPlatform(normalizedHints.platform) || detectOs(userAgent);
     const browser = detectBrowser(userAgent);
+    const rawDeviceModel = normalizedHints.model || parseDeviceModelFromUserAgent(userAgent, os);
+    const { deviceModel, deviceModelRaw } = resolveDeviceModel(rawDeviceModel);
 
     return {
         browser,
@@ -281,7 +284,8 @@ function parseUserAgent(userAgent = "", clientHints = {}) {
         os,
         osVersion: normalizeOsVersion(os, normalizedHints.platformVersion) || parseOsVersionFromUserAgent(userAgent, os),
         deviceType: detectDeviceType(userAgent),
-        deviceModel: normalizedHints.model || parseDeviceModelFromUserAgent(userAgent, os)
+        deviceModel,
+        deviceModelRaw
     };
 }
 
@@ -481,12 +485,13 @@ async function insertVisitRecord(db, record) {
                 os,
                 os_version,
                 device_model,
+                device_model_raw,
                 browser,
                 browser_version,
                 country,
                 region,
                 city
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 record.ip,
                 record.userAgent,
@@ -497,6 +502,7 @@ async function insertVisitRecord(db, record) {
                 record.os,
                 record.osVersion,
                 record.deviceModel,
+                record.deviceModelRaw,
                 record.browser,
                 record.browserVersion,
                 record.country,
@@ -574,7 +580,7 @@ module.exports = async (req, res) => {
         const ip = getClientIp(req);
         const visitedAt = formatShanghaiDateTime();
         const clientHints = req.body?.clientHints;
-        const { browser, browserVersion, os, osVersion, deviceType, deviceModel } = parseUserAgent(userAgent, clientHints);
+        const { browser, browserVersion, os, osVersion, deviceType, deviceModel, deviceModelRaw } = parseUserAgent(userAgent, clientHints);
         const { country, region, city } = await getGeoLocation(req, ip);
 
         await insertVisitRecord(db, {
@@ -589,6 +595,7 @@ module.exports = async (req, res) => {
             osVersion,
             deviceType,
             deviceModel,
+            deviceModelRaw,
             country,
             region,
             city
@@ -607,6 +614,7 @@ module.exports = async (req, res) => {
             osVersion,
             deviceType,
             deviceModel,
+            deviceModelRaw,
             country,
             region,
             city
