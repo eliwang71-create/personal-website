@@ -69,6 +69,10 @@ const VIDEO_GALLERIES = {
 };
 
 const VIEW_IDS = ["home", "about", "projects", "media", "links", "contact"];
+const TRACKING_ENDPOINT =
+    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        ? "http://127.0.0.1:3000/api/track-visit"
+        : "/api/track-visit";
 
 const isTouchDevice =
     window.matchMedia("(pointer: coarse)").matches ||
@@ -78,6 +82,7 @@ const isTouchDevice =
 let particleSystem = null;
 let activePageId = "home";
 let isAnimating = false;
+let lastTrackedPath = "";
 
 let currentAlbumKey = null;
 let currentIndex = 0;
@@ -109,6 +114,31 @@ function syncActiveViewOverflow() {
 function setActiveNav(viewId) {
     document.querySelectorAll("[data-scene-link]").forEach((item) => {
         item.classList.toggle("is-active", item.dataset.sceneLink === viewId);
+    });
+}
+
+function buildTrackedPath(viewId = activePageId) {
+    return `/#${viewId}`;
+}
+
+function trackVisit(path = buildTrackedPath()) {
+    if (!TRACKING_ENDPOINT || path === lastTrackedPath) {
+        return;
+    }
+
+    lastTrackedPath = path;
+
+    window.fetch(TRACKING_ENDPOINT, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            path,
+            referer: document.referrer || ""
+        })
+    }).catch(() => {
+        // Ignore local tracking failures in the UI.
     });
 }
 
@@ -672,6 +702,7 @@ function switchView(targetId, transWord = "VOID") {
             isAnimating = false;
             setActiveNav(targetId);
             syncActiveViewOverflow();
+            trackVisit(buildTrackedPath(targetId));
         }
     });
 
@@ -804,6 +835,7 @@ function bootstrap() {
     initVideoSwipe();
     initKeybindings();
     syncActiveViewOverflow();
+    trackVisit(buildTrackedPath(activePageId));
 
     const points = initFluidBg();
     startOpening(points);

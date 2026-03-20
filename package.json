@@ -1,0 +1,12 @@
+{
+  "name": "buildspace-personal-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "王一轩的个人网站与访问记录方案",
+  "scripts": {
+    "track:local": "node server.js"
+  },
+  "dependencies": {
+    "mysql2": "latest"
+  }
+}

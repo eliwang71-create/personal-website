@@ -85,6 +85,108 @@ python3 -m http.server 8000
 http://localhost:8000
 ```
 
+## 本地访问记录测试
+
+如果你想把访问记录写入本地 MySQL，可以同时启动一个本地记录服务：
+
+```bash
+node server.js
+```
+
+默认配置：
+
+- 接口地址：`http://127.0.0.1:3000/api/track-visit`
+- 数据库：`personal_website`
+- 表：`visit_logs`
+- MySQL 客户端：`/opt/homebrew/bin/mysql`
+
+然后再开一个终端运行静态站：
+
+```bash
+python3 -m http.server 8000
+```
+
+打开网站后，访问记录会自动写入 `visit_logs`。  
+你可以在 MySQL 中查看：
+
+```sql
+SELECT * FROM visit_logs ORDER BY visited_at DESC LIMIT 20;
+```
+
+## 线上访问记录
+
+如果要让部署在 Vercel 上的网站把访问记录写入云端 MySQL，项目已经预留好了：
+
+- 接口：`/api/track-visit`
+- Vercel Function 文件：`api/track-visit.js`
+- 前端会在生产环境自动请求同域接口
+
+你需要做的是：
+
+1. 安装依赖
+
+```bash
+npm install
+```
+
+2. 在云端 MySQL 中创建数据库和 `visit_logs` 表
+
+```sql
+CREATE TABLE visit_logs (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  ip VARCHAR(64),
+  user_agent TEXT,
+  path VARCHAR(255),
+  referer TEXT,
+  visited_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+3. 在 Vercel 项目环境变量中配置：
+
+- `MYSQL_HOST`
+- `MYSQL_PORT`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+- `MYSQL_DATABASE`
+- `MYSQL_SSL`
+
+建议：
+
+- `MYSQL_PORT=3306`
+- `MYSQL_SSL=true`
+
+4. 重新部署后，网站访问会自动写入云端 MySQL
+
+## 访问记录查询示例
+
+看最近访问：
+
+```sql
+SELECT id, path, visited_at
+FROM visit_logs
+ORDER BY id DESC
+LIMIT 20;
+```
+
+看页面访问次数：
+
+```sql
+SELECT path, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY path
+ORDER BY visits DESC;
+```
+
+看来源分布：
+
+```sql
+SELECT referer, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY referer
+ORDER BY visits DESC;
+```
+
 ## 素材管理
 
 网站里的真实素材建议统一放在：
