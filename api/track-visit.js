@@ -157,17 +157,41 @@ function parseOsVersionFromUserAgent(userAgent = "", os = "Unknown") {
 }
 
 function parseAndroidModelFromUserAgent(userAgent = "") {
-    const match = userAgent.match(/Android [^;)]*;\s*([^;)]+?)(?:\s+Build\/[^;)]+)?(?:;|\))/i);
-    if (!match?.[1]) {
+    const parentheticalMatch = userAgent.match(/\(([^)]+)\)/);
+    if (!parentheticalMatch?.[1]) {
         return null;
     }
 
-    const model = match[1].trim();
-    if (!model || /^(wv|mobile|linux)$/i.test(model)) {
+    const tokens = parentheticalMatch[1]
+        .split(";")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    const androidIndex = tokens.findIndex((item) => /^Android\b/i.test(item));
+    const candidates = androidIndex >= 0 ? tokens.slice(androidIndex + 1) : tokens;
+
+    const modelToken = candidates.find((item) => {
+        const normalized = item.replace(/\s+Build\/.+$/i, "").trim();
+        if (!normalized) {
+            return false;
+        }
+
+        if (/^(wv|mobile|linux|u)$/i.test(normalized)) {
+            return false;
+        }
+
+        if (/^[a-z]{2}(?:[-_][a-z]{2})?$/i.test(normalized)) {
+            return false;
+        }
+
+        return true;
+    });
+
+    if (!modelToken) {
         return null;
     }
 
-    return model;
+    return modelToken.replace(/\s+Build\/.+$/i, "").trim() || null;
 }
 
 function parseDeviceModelFromUserAgent(userAgent = "", os = "Unknown") {
