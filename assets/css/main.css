@@ -1762,6 +1762,17 @@ html[data-theme="light"] .project-iris-indicator.is-active span {
         padding: 18px 14px 16px;
     }
 
+    .photo-iris-overlay {
+        background: rgba(10, 10, 10, 0.88);
+        will-change: opacity;
+    }
+
+    .photo-iris-overlay__backdrop {
+        background: rgba(10, 10, 10, 0.78);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
     .photo-iris-toolbar {
         margin-bottom: 12px;
     }
@@ -1789,6 +1800,8 @@ html[data-theme="light"] .project-iris-indicator.is-active span {
         width: 48px;
         height: 48px;
         transform: translateY(-50%);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     .photo-iris-nav--prev {
@@ -1802,14 +1815,17 @@ html[data-theme="light"] .project-iris-indicator.is-active span {
     .photo-iris-card {
         padding: 12px;
         border-radius: 26px;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2);
     }
 
     .photo-iris-frame {
         border-radius: 20px;
+        background: #080808;
     }
 
     .photo-iris-image {
         object-fit: cover;
+        transform: translateZ(0);
     }
 
     .photo-iris-image__meta {

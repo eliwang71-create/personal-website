@@ -88,6 +88,21 @@ const PROJECT_SLIDE_VARIANTS = {
     })
 };
 
+const PHOTO_SLIDE_VARIANTS_MOBILE = {
+    enter: (direction) => ({
+        x: direction > 0 ? 44 : -44,
+        opacity: 0
+    }),
+    center: {
+        x: 0,
+        opacity: 1
+    },
+    exit: (direction) => ({
+        x: direction > 0 ? -44 : 44,
+        opacity: 0
+    })
+};
+
 function preloadImage(cache, src) {
     if (!src || typeof src !== "string") {
         return Promise.resolve();
@@ -549,9 +564,24 @@ function PhotoOverlay({ overlayState, onClose, onChange, onJump }) {
     const imageSrc = album ? album.images[overlayState.index] : "";
     const origin = overlayState?.origin;
     const direction = overlayState?.direction || 0;
+    const isMobilePhotoOverlay = IS_TOUCH_DEVICE;
     const initialClip = origin ? `circle(0px at ${origin.x}px ${origin.y}px)` : "circle(0px at 50% 50%)";
     const finalClip = origin ? `circle(${origin.radius}px at ${origin.x}px ${origin.y}px)` : "circle(150vmax at 50% 50%)";
-    const shouldUseSharedLayout = Boolean(overlayState && overlayState.sourceKey === album?.key && !overlayState.hasPaginated);
+    const shouldUseSharedLayout = Boolean(!isMobilePhotoOverlay && overlayState && overlayState.sourceKey === album?.key && !overlayState.hasPaginated);
+    const photoSlideVariants = isMobilePhotoOverlay ? PHOTO_SLIDE_VARIANTS_MOBILE : PROJECT_SLIDE_VARIANTS;
+    const overlayMotionProps = isMobilePhotoOverlay
+        ? {
+              initial: { opacity: 0 },
+              animate: { opacity: 1 },
+              exit: { opacity: 0 },
+              transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+          }
+        : {
+              initial: { opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip },
+              animate: { opacity: 1, clipPath: finalClip, WebkitClipPath: finalClip },
+              exit: { opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip },
+              transition: { duration: 0.68, ease: [0.22, 1, 0.36, 1] }
+          };
 
     const handleDragEnd = (_event, info) => {
         const swipe = info.offset.x * info.velocity.x;
@@ -571,10 +601,7 @@ function PhotoOverlay({ overlayState, onClose, onChange, onJump }) {
             {album ? (
                 <motion.div
                     className="photo-iris-overlay"
-                    initial={{ opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip }}
-                    animate={{ opacity: 1, clipPath: finalClip, WebkitClipPath: finalClip }}
-                    exit={{ opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip }}
-                    transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
+                    {...overlayMotionProps}
                     onClick={onClose}
                 >
                     <div className="photo-iris-overlay__backdrop"></div>
@@ -611,18 +638,25 @@ function PhotoOverlay({ overlayState, onClose, onChange, onJump }) {
                                         key={`${album.key}-${overlayState.index}`}
                                         className="photo-iris-slide"
                                         custom={direction}
-                                        variants={PROJECT_SLIDE_VARIANTS}
+                                        variants={photoSlideVariants}
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{
-                                            x: { type: "spring", stiffness: 210, damping: 28, mass: 0.92 },
-                                            opacity: { duration: 0.22 },
-                                            scale: { duration: 0.22 }
-                                        }}
+                                        transition={
+                                            isMobilePhotoOverlay
+                                                ? {
+                                                      x: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+                                                      opacity: { duration: 0.18 }
+                                                  }
+                                                : {
+                                                      x: { type: "spring", stiffness: 210, damping: 28, mass: 0.92 },
+                                                      opacity: { duration: 0.22 },
+                                                      scale: { duration: 0.22 }
+                                                  }
+                                        }
                                         drag="x"
                                         dragConstraints={{ left: 0, right: 0 }}
-                                        dragElastic={0.18}
+                                        dragElastic={isMobilePhotoOverlay ? 0.08 : 0.18}
                                         onDragEnd={handleDragEnd}
                                     >
                                         <motion.article
