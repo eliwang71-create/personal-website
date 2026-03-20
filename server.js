@@ -42,6 +42,35 @@ function detectBrowser(userAgent = "") {
     return "Unknown";
 }
 
+function parseBrowserVersionFromUserAgent(userAgent = "", browser = "Unknown") {
+    if (browser === "Edge") {
+        const match = userAgent.match(/Edg\/([\d.]+)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    if (browser === "Chrome") {
+        const match = userAgent.match(/Chrome\/([\d.]+)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    if (browser === "Safari") {
+        const match = userAgent.match(/Version\/([\d.]+)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    if (browser === "Firefox") {
+        const match = userAgent.match(/Firefox\/([\d.]+)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    if (browser === "Opera") {
+        const match = userAgent.match(/(?:OPR|Opera)\/([\d.]+)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    return null;
+}
+
 function detectOs(userAgent = "") {
     if (/iphone|ipad|ipod/i.test(userAgent)) {
         return "iOS";
@@ -69,6 +98,173 @@ function detectDeviceType(userAgent = "") {
         return "Mobile";
     }
     return "Desktop";
+}
+
+function normalizeVersion(version = "") {
+    if (typeof version !== "string" || !version.trim()) {
+        return null;
+    }
+
+    return version.trim().replace(/_/g, ".");
+}
+
+function mapClientHintsPlatform(platform = "") {
+    const normalized = String(platform).trim().toLowerCase();
+
+    if (!normalized) {
+        return null;
+    }
+
+    if (normalized === "macos") {
+        return "macOS";
+    }
+
+    if (normalized === "ios") {
+        return "iOS";
+    }
+
+    if (normalized === "android") {
+        return "Android";
+    }
+
+    if (normalized === "windows") {
+        return "Windows";
+    }
+
+    if (normalized === "linux") {
+        return "Linux";
+    }
+
+    return platform;
+}
+
+function parseOsVersionFromUserAgent(userAgent = "", os = "Unknown") {
+    if (os === "iOS") {
+        const match = userAgent.match(/OS (\d+(?:[_\.\d]+)*)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    if (os === "Android") {
+        const match = userAgent.match(/Android (\d+(?:\.\d+)*)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    if (os === "macOS") {
+        const match = userAgent.match(/Mac OS X (\d+(?:[_\.\d]+)*)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    if (os === "Windows") {
+        const match = userAgent.match(/Windows NT (\d+(?:\.\d+)*)/i);
+        return normalizeVersion(match?.[1]);
+    }
+
+    return null;
+}
+
+function parseAndroidModelFromUserAgent(userAgent = "") {
+    const match = userAgent.match(/Android [^;)]*;\s*([^;)]+?)(?:\s+Build\/[^;)]+)?(?:;|\))/i);
+    if (!match?.[1]) {
+        return null;
+    }
+
+    const model = match[1].trim();
+    if (!model || /^(wv|mobile|linux)$/i.test(model)) {
+        return null;
+    }
+
+    return model;
+}
+
+function parseDeviceModelFromUserAgent(userAgent = "", os = "Unknown") {
+    if (/ipad/i.test(userAgent)) {
+        return "iPad";
+    }
+
+    if (/iphone/i.test(userAgent)) {
+        return "iPhone";
+    }
+
+    if (/ipod/i.test(userAgent)) {
+        return "iPod";
+    }
+
+    if (os === "Android") {
+        return parseAndroidModelFromUserAgent(userAgent);
+    }
+
+    return null;
+}
+
+function normalizeClientHints(clientHints) {
+    if (!clientHints || typeof clientHints !== "object") {
+        return {};
+    }
+
+    return {
+        platform: typeof clientHints.platform === "string" ? clientHints.platform.trim() : null,
+        platformVersion: normalizeVersion(clientHints.platformVersion),
+        model: typeof clientHints.model === "string" && clientHints.model.trim() ? clientHints.model.trim() : null,
+        mobile: typeof clientHints.mobile === "boolean" ? clientHints.mobile : null,
+        fullVersionList: Array.isArray(clientHints.fullVersionList)
+            ? clientHints.fullVersionList
+                  .filter((item) => item && typeof item.brand === "string" && typeof item.version === "string")
+                  .map((item) => ({
+                      brand: item.brand.trim(),
+                      version: normalizeVersion(item.version)
+                  }))
+            : []
+    };
+}
+
+function parseBrowserVersionFromClientHints(browser = "Unknown", clientHints = {}) {
+    const candidates = clientHints.fullVersionList || [];
+    if (!candidates.length) {
+        return null;
+    }
+
+    const brandMatchers = {
+        Edge: [/Microsoft Edge/i],
+        Chrome: [/Google Chrome/i, /^Chrome$/i, /^Chromium$/i],
+        Opera: [/Opera/i],
+        Firefox: [/Firefox/i]
+    };
+
+    const matchers = brandMatchers[browser];
+    if (!matchers) {
+        return null;
+    }
+
+    const matchedItem = candidates.find((item) => matchers.some((matcher) => matcher.test(item.brand)));
+    return normalizeVersion(matchedItem?.version);
+}
+
+function normalizeOsVersion(os = "Unknown", version = null) {
+    const normalized = normalizeVersion(version);
+    if (!normalized) {
+        return null;
+    }
+
+    if (os === "Windows" && normalized === "0.0.0") {
+        return null;
+    }
+
+    return normalized;
+}
+
+function parseUserAgent(userAgent = "", clientHints = {}) {
+    const normalizedHints = normalizeClientHints(clientHints);
+    const os = mapClientHintsPlatform(normalizedHints.platform) || detectOs(userAgent);
+    const browser = detectBrowser(userAgent);
+
+    return {
+        browser,
+        browserVersion: parseBrowserVersionFromClientHints(browser, normalizedHints) || parseBrowserVersionFromUserAgent(userAgent, browser),
+        os,
+        osVersion: normalizeOsVersion(os, normalizedHints.platformVersion) || parseOsVersionFromUserAgent(userAgent, os),
+        deviceType: detectDeviceType(userAgent),
+        deviceModel: normalizedHints.model || parseDeviceModelFromUserAgent(userAgent, os)
+    };
 }
 
 function sendJson(response, statusCode, payload) {
@@ -189,6 +385,43 @@ INSERT INTO visit_logs (
     visited_at,
     device_type,
     os,
+    os_version,
+    device_model,
+    browser,
+    browser_version,
+    country,
+    region,
+    city
+)
+VALUES (
+    ${sqlEscape(record.ip)},
+    ${sqlEscape(record.userAgent)},
+    ${sqlEscape(record.path)},
+    ${sqlEscape(record.referer)},
+    ${sqlEscape(record.visitedAt)},
+    ${sqlEscape(record.deviceType)},
+    ${sqlEscape(record.os)},
+    ${sqlEscape(record.osVersion)},
+    ${sqlEscape(record.deviceModel)},
+    ${sqlEscape(record.browser)},
+    ${sqlEscape(record.browserVersion)},
+    ${sqlEscape(record.country)},
+    ${sqlEscape(record.region)},
+    ${sqlEscape(record.city)}
+);
+`;
+}
+
+function buildLegacyInsertSql(record) {
+    return `
+INSERT INTO visit_logs (
+    ip,
+    user_agent,
+    path,
+    referer,
+    visited_at,
+    device_type,
+    os,
     browser,
     country,
     region,
@@ -225,7 +458,15 @@ async function insertVisit(record) {
             throw error;
         }
 
-        await runMysql(buildBasicInsertSql(record));
+        try {
+            await runMysql(buildLegacyInsertSql(record));
+        } catch (legacyError) {
+            if (!/Unknown column/i.test(legacyError.message)) {
+                throw legacyError;
+            }
+
+            await runMysql(buildBasicInsertSql(record));
+        }
     }
 }
 
@@ -251,6 +492,22 @@ function decodeGeoHeader(value = "") {
 
 function hasDetailedGeo(geo = {}) {
     return Boolean(geo.country && geo.region && geo.city);
+}
+
+function isRegionCode(value = "") {
+    return typeof value === "string" && /^[A-Z0-9-]{2,6}$/.test(value.trim());
+}
+
+function mergeGeoField(headerValue, fallbackValue, { preferFallbackForCode = false } = {}) {
+    if (!headerValue) {
+        return fallbackValue || null;
+    }
+
+    if (preferFallbackForCode && fallbackValue && isRegionCode(headerValue)) {
+        return fallbackValue;
+    }
+
+    return headerValue;
 }
 
 async function fetchGeoFromIpApi(ip) {
@@ -304,9 +561,9 @@ async function getGeoLocation(request, ip) {
     const geoFromFallback = await fetchGeoFromIpApi(ip);
 
     return {
-        country: geoFromHeaders.country || geoFromFallback.country,
-        region: geoFromHeaders.region || geoFromFallback.region,
-        city: geoFromHeaders.city || geoFromFallback.city
+        country: mergeGeoField(geoFromHeaders.country, geoFromFallback.country),
+        region: mergeGeoField(geoFromHeaders.region, geoFromFallback.region, { preferFallbackForCode: true }),
+        city: mergeGeoField(geoFromHeaders.city, geoFromFallback.city)
     };
 }
 
@@ -337,16 +594,21 @@ const server = http.createServer(async (request, response) => {
             const body = rawBody ? JSON.parse(rawBody) : {};
             const userAgent = request.headers["user-agent"] || "unknown";
             const ip = getClientIp(request);
+            const clientHints = body.clientHints;
             const { country, region, city } = await getGeoLocation(request, ip);
+            const { browser, browserVersion, os, osVersion, deviceType, deviceModel } = parseUserAgent(userAgent, clientHints);
             const record = {
                 ip,
                 userAgent,
                 path: body.path || "/",
                 referer: request.headers.referer || body.referer || "",
                 visitedAt: formatShanghaiDateTime(),
-                browser: detectBrowser(userAgent),
-                os: detectOs(userAgent),
-                deviceType: detectDeviceType(userAgent),
+                browser,
+                browserVersion,
+                os,
+                osVersion,
+                deviceType,
+                deviceModel,
                 country,
                 region,
                 city

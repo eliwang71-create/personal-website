@@ -151,6 +151,21 @@ ADD COLUMN os VARCHAR(32) NULL,
 ADD COLUMN browser VARCHAR(32) NULL;
 ```
 
+如果你还想记录设备型号和操作系统版本，可以继续补这 2 列：
+
+```sql
+ALTER TABLE visit_logs
+ADD COLUMN device_model VARCHAR(128) NULL,
+ADD COLUMN os_version VARCHAR(64) NULL;
+```
+
+如果你还想把浏览器版本也存下来，再补 1 列：
+
+```sql
+ALTER TABLE visit_logs
+ADD COLUMN browser_version VARCHAR(64) NULL;
+```
+
 如果你还想记录 IP 属地，可以继续补这 3 列：
 
 ```sql
