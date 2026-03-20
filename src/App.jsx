@@ -88,6 +88,58 @@ const PROJECT_SLIDE_VARIANTS = {
     })
 };
 
+function preloadImage(cache, src) {
+    if (!src || typeof src !== "string") {
+        return Promise.resolve();
+    }
+
+    if (cache.has(src)) {
+        return cache.get(src);
+    }
+
+    const pending = new Promise((resolve, reject) => {
+        const image = new window.Image();
+        let settled = false;
+
+        const finalize = () => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            resolve(src);
+        };
+
+        const fail = (error) => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            reject(error);
+        };
+
+        image.onload = finalize;
+        image.onerror = fail;
+        image.decoding = "async";
+        image.src = src;
+
+        if (image.complete) {
+            finalize();
+        } else if (typeof image.decode === "function") {
+            image.decode().then(finalize).catch(() => {
+                // Ignore decode failures and let onload complete the request.
+            });
+        }
+    }).catch((error) => {
+        cache.delete(src);
+        throw error;
+    });
+
+    cache.set(src, pending);
+    return pending;
+}
+
 function getStoredTheme() {
     const currentTheme = document.documentElement.dataset.theme;
 
@@ -578,7 +630,7 @@ function PhotoOverlay({ overlayState, onClose, onChange, onJump }) {
                                             layoutId={shouldUseSharedLayout ? `album-card-${album.key}` : undefined}
                                         >
                                             <div className="photo-iris-frame">
-                                                <img src={imageSrc} alt={album.title} className="photo-iris-image theme-adaptive-image" />
+                                                <img src={imageSrc} alt={album.title} className="photo-iris-image theme-adaptive-image" loading="eager" decoding="async" fetchPriority="high" />
                                                 <div className="photo-iris-image__shade"></div>
                                                 <div className="photo-iris-image__meta">
                                                     <div className="photo-iris-image__label">{album.label}</div>
@@ -977,6 +1029,9 @@ export default function App() {
     const themeSwitchTimeoutRef = useRef(null);
     const cursorRef = useRef(null);
     const canvasRef = useRef(null);
+    const imagePreloadCacheRef = useRef(new Map());
+    const photoOverlayRef = useRef(null);
+    const photoNavRequestRef = useRef(0);
     const activeThemeVisual = THEME_VISUALS[theme];
     const toggleThemeState = themeIntent || theme;
     const toggleActionTheme = toggleThemeState === "dark" ? "light" : "dark";
@@ -1174,6 +1229,10 @@ export default function App() {
     }, [activeView]);
 
     useEffect(() => {
+        photoOverlayRef.current = photoOverlay;
+    }, [photoOverlay]);
+
+    useEffect(() => {
         const handleKeydown = (event) => {
             if (projectOverlay) {
                 if (event.key === "ArrowRight") {
@@ -1356,6 +1415,7 @@ export default function App() {
 
         setProjectOverlay(null);
         setVideoOverlay(null);
+        photoNavRequestRef.current += 1;
         setPhotoOverlay({
             albumKey,
             index: startIndex,
@@ -1366,32 +1426,114 @@ export default function App() {
         });
     };
 
-    const changePhoto = (direction, event) => {
+    const preloadAlbumImages = (albumKey, focusIndex = 0) => {
+        const album = ALBUMS[albumKey];
+        if (!album) {
+            return;
+        }
+
+        const total = album.images.length;
+        const priorityIndexes = [focusIndex, focusIndex + 1, focusIndex - 1]
+            .map((index) => wrapIndex(index, total))
+            .filter((index, position, array) => array.indexOf(index) === position);
+
+        priorityIndexes.forEach((index) => {
+            preloadImage(imagePreloadCacheRef.current, album.images[index]).catch(() => {
+                // Ignore failed eager preloads and let the browser retry on display.
+            });
+        });
+
+        const warmRemaining = () => {
+            album.images.forEach((src) => {
+                preloadImage(imagePreloadCacheRef.current, src).catch(() => {
+                    // Ignore failed background warming.
+                });
+            });
+        };
+
+        if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(warmRemaining, { timeout: 1200 });
+        } else {
+            window.setTimeout(warmRemaining, 150);
+        }
+    };
+
+    useEffect(() => {
+        if (!photoOverlay) {
+            return;
+        }
+
+        preloadAlbumImages(photoOverlay.albumKey, photoOverlay.index);
+    }, [photoOverlay]);
+
+    const changePhoto = async (direction, event) => {
         event?.stopPropagation();
-        setPhotoOverlay((current) => {
-            if (!current) {
-                return current;
+        const current = photoOverlayRef.current;
+        if (!current) {
+            return;
+        }
+
+        const total = ALBUMS[current.albumKey].images.length;
+        const nextIndex = wrapIndex(current.index + direction, total);
+        const nextSrc = ALBUMS[current.albumKey].images[nextIndex];
+        const requestId = ++photoNavRequestRef.current;
+
+        preloadAlbumImages(current.albumKey, nextIndex);
+
+        try {
+            await preloadImage(imagePreloadCacheRef.current, nextSrc);
+        } catch {
+            // Let the img element retry if eager preload fails.
+        }
+
+        if (photoNavRequestRef.current !== requestId) {
+            return;
+        }
+
+        setPhotoOverlay((overlay) => {
+            if (!overlay) {
+                return overlay;
             }
 
-            const total = ALBUMS[current.albumKey].images.length;
             return {
-                ...current,
+                ...overlay,
                 direction,
-                index: wrapIndex(current.index + direction, total),
+                index: nextIndex,
                 hasPaginated: true
             };
         });
     };
 
-    const jumpPhoto = (photoIndex) => {
-        setPhotoOverlay((current) => {
-            if (!current || current.index === photoIndex) {
-                return current;
+    const jumpPhoto = async (photoIndex) => {
+        const current = photoOverlayRef.current;
+        if (!current || current.index === photoIndex) {
+            return;
+        }
+
+        const nextSrc = ALBUMS[current.albumKey].images[photoIndex];
+        const direction = photoIndex > current.index ? 1 : -1;
+        const requestId = ++photoNavRequestRef.current;
+
+        preloadAlbumImages(current.albumKey, photoIndex);
+
+        try {
+            await preloadImage(imagePreloadCacheRef.current, nextSrc);
+        } catch {
+            // Let the img element retry if eager preload fails.
+        }
+
+        if (photoNavRequestRef.current !== requestId) {
+            return;
+        }
+
+        setPhotoOverlay((overlay) => {
+            if (!overlay) {
+                return overlay;
             }
 
             return {
-                ...current,
-                direction: photoIndex > current.index ? 1 : -1,
+                ...overlay,
+                direction,
                 index: photoIndex,
                 hasPaginated: true
             };
