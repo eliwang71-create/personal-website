@@ -88,6 +88,21 @@ const PROJECT_SLIDE_VARIANTS = {
     })
 };
 
+const PROJECT_SLIDE_VARIANTS_MOBILE = {
+    enter: (direction) => ({
+        x: direction > 0 ? 42 : -42,
+        opacity: 0
+    }),
+    center: {
+        x: 0,
+        opacity: 1
+    },
+    exit: (direction) => ({
+        x: direction > 0 ? -42 : 42,
+        opacity: 0
+    })
+};
+
 const PHOTO_SLIDE_VARIANTS_MOBILE = {
     enter: {
         opacity: 0
@@ -304,9 +319,24 @@ function ProjectOverlay({ overlayState, onClose, onChange, onJump }) {
     const project = overlayState ? PROJECTS[overlayState.index] : null;
     const origin = overlayState?.origin;
     const direction = overlayState?.direction || 0;
+    const isMobileProjectOverlay = IS_TOUCH_DEVICE;
     const initialClip = origin ? `circle(0px at ${origin.x}px ${origin.y}px)` : "circle(0px at 50% 50%)";
     const finalClip = origin ? `circle(${origin.radius}px at ${origin.x}px ${origin.y}px)` : "circle(150vmax at 50% 50%)";
-    const shouldUseSharedLayout = Boolean(overlayState && overlayState.sourceKey === project?.key && !overlayState.hasPaginated);
+    const shouldUseSharedLayout = Boolean(!isMobileProjectOverlay && overlayState && overlayState.sourceKey === project?.key && !overlayState.hasPaginated);
+    const projectSlideVariants = isMobileProjectOverlay ? PROJECT_SLIDE_VARIANTS_MOBILE : PROJECT_SLIDE_VARIANTS;
+    const overlayMotionProps = isMobileProjectOverlay
+        ? {
+              initial: { opacity: 0 },
+              animate: { opacity: 1 },
+              exit: { opacity: 0 },
+              transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+          }
+        : {
+              initial: { opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip },
+              animate: { opacity: 1, clipPath: finalClip, WebkitClipPath: finalClip },
+              exit: { opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip },
+              transition: { duration: 0.68, ease: [0.22, 1, 0.36, 1] }
+          };
 
     const handleDragEnd = (_event, info) => {
         const swipe = info.offset.x * info.velocity.x;
@@ -326,10 +356,7 @@ function ProjectOverlay({ overlayState, onClose, onChange, onJump }) {
             {project ? (
                 <motion.div
                     className="project-iris-overlay"
-                    initial={{ opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip }}
-                    animate={{ opacity: 1, clipPath: finalClip, WebkitClipPath: finalClip }}
-                    exit={{ opacity: 0, clipPath: initialClip, WebkitClipPath: initialClip }}
-                    transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
+                    {...overlayMotionProps}
                     onClick={onClose}
                 >
                     <div className="project-iris-overlay__backdrop"></div>
@@ -366,18 +393,25 @@ function ProjectOverlay({ overlayState, onClose, onChange, onJump }) {
                                         key={project.key}
                                         className="project-iris-slide"
                                         custom={direction}
-                                        variants={PROJECT_SLIDE_VARIANTS}
+                                        variants={projectSlideVariants}
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{
-                                            x: { type: "spring", stiffness: 210, damping: 28, mass: 0.92 },
-                                            opacity: { duration: 0.22 },
-                                            scale: { duration: 0.22 }
-                                        }}
+                                        transition={
+                                            isMobileProjectOverlay
+                                                ? {
+                                                      x: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+                                                      opacity: { duration: 0.18 }
+                                                  }
+                                                : {
+                                                      x: { type: "spring", stiffness: 210, damping: 28, mass: 0.92 },
+                                                      opacity: { duration: 0.22 },
+                                                      scale: { duration: 0.22 }
+                                                  }
+                                        }
                                         drag="x"
                                         dragConstraints={{ left: 0, right: 0 }}
-                                        dragElastic={0.18}
+                                        dragElastic={isMobileProjectOverlay ? 0.08 : 0.18}
                                         onDragEnd={handleDragEnd}
                                     >
                                         <motion.article
