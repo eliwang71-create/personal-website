@@ -73,6 +73,26 @@ function parseUserAgent(userAgent = "") {
     };
 }
 
+function decodeGeoHeader(value = "") {
+    if (typeof value !== "string" || !value.trim()) {
+        return null;
+    }
+
+    try {
+        return decodeURIComponent(value.trim());
+    } catch {
+        return value.trim();
+    }
+}
+
+function getGeoLocation(req) {
+    return {
+        country: decodeGeoHeader(req.headers["x-vercel-ip-country"]),
+        region: decodeGeoHeader(req.headers["x-vercel-ip-country-region"]),
+        city: decodeGeoHeader(req.headers["x-vercel-ip-city"])
+    };
+}
+
 function getPool() {
     if (pool) {
         return pool;
@@ -131,8 +151,11 @@ async function insertVisitRecord(db, record) {
                 visited_at,
                 device_type,
                 os,
-                browser
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                browser,
+                country,
+                region,
+                city
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 record.ip,
                 record.userAgent,
@@ -141,7 +164,10 @@ async function insertVisitRecord(db, record) {
                 record.visitedAt,
                 record.deviceType,
                 record.os,
-                record.browser
+                record.browser,
+                record.country,
+                record.region,
+                record.city
             ]
         );
     } catch (error) {
@@ -179,6 +205,7 @@ module.exports = async (req, res) => {
         const ip = getClientIp(req);
         const visitedAt = formatShanghaiDateTime();
         const { browser, os, deviceType } = parseUserAgent(userAgent);
+        const { country, region, city } = getGeoLocation(req);
 
         await insertVisitRecord(db, {
             ip,
@@ -188,7 +215,10 @@ module.exports = async (req, res) => {
             visitedAt,
             browser,
             os,
-            deviceType
+            deviceType,
+            country,
+            region,
+            city
         });
 
         console.log(JSON.stringify({
@@ -200,7 +230,10 @@ module.exports = async (req, res) => {
             visitedAt,
             browser,
             os,
-            deviceType
+            deviceType,
+            country,
+            region,
+            city
         }));
 
         res.status(200).json({ ok: true });

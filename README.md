@@ -151,6 +151,26 @@ ADD COLUMN os VARCHAR(32) NULL,
 ADD COLUMN browser VARCHAR(32) NULL;
 ```
 
+如果你还想记录 IP 属地，可以继续补这 3 列：
+
+```sql
+ALTER TABLE visit_logs
+ADD COLUMN country VARCHAR(64) NULL,
+ADD COLUMN region VARCHAR(64) NULL,
+ADD COLUMN city VARCHAR(128) NULL;
+```
+
+线上部署在 Vercel 时，会优先读取官方地理请求头：
+
+- `x-vercel-ip-country`
+- `x-vercel-ip-country-region`
+- `x-vercel-ip-city`
+
+参考文档：
+
+- https://vercel.com/docs/headers/request-headers
+- https://vercel.com/kb/guide/geo-ip-headers-geolocation-vercel-functions
+
 3. 在 Vercel 项目环境变量中配置：
 
 - `MYSQL_HOST`
@@ -237,6 +257,15 @@ ORDER BY id DESC
 LIMIT 20;
 ```
 
+如果你也补了属地字段，可以这样查完整访问画像：
+
+```sql
+SELECT id, ip, path, country, region, city, device_type, os, browser, visited_at
+FROM visit_logs
+ORDER BY id DESC
+LIMIT 20;
+```
+
 看某个页面最近被谁访问过：
 
 ```sql
@@ -282,6 +311,33 @@ ORDER BY visits DESC;
 SELECT device_type, COUNT(*) AS visits
 FROM visit_logs
 GROUP BY device_type
+ORDER BY visits DESC;
+```
+
+看国家分布：
+
+```sql
+SELECT country, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY country
+ORDER BY visits DESC;
+```
+
+看地区分布：
+
+```sql
+SELECT country, region, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY country, region
+ORDER BY visits DESC;
+```
+
+看城市分布：
+
+```sql
+SELECT country, region, city, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY country, region, city
 ORDER BY visits DESC;
 ```
 
@@ -355,7 +411,9 @@ ALTER TABLE visit_logs AUTO_INCREMENT = 1;
 - `visited_at` 现在按中国时区 `Asia/Shanghai` 写入
 - 旧数据如果是在修正前写入的，时间可能还是旧时区
 - `device_type / os / browser` 只有在你为表添加了对应字段之后，新访问才会写入
+- `country / region / city` 也只有在你为表添加了对应字段之后，新访问才会写入
 - 你仍然可以通过 `user_agent` 查看完整原始设备字符串
+- 设备型号在 Web 场景里通常拿不到稳定的精确值，但设备类型、系统、浏览器和 IP 属地是可以稳定记录的
 
 ## 素材管理
 
