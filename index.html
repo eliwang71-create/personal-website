@@ -1,507 +1,54 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>王一轩｜数字作品集</title>
-    <link rel="icon" type="image/png" href="./assets/boy.png">
-    <link rel="stylesheet" href="./assets/css/main.css">
+    <style>
+        html,
+        body,
+        #root {
+            margin: 0;
+            min-height: 100%;
+            background: var(--boot-bg, #09090b);
+        }
+
+        html[data-theme="light"],
+        html[data-theme="light"] body,
+        html[data-theme="light"] #root {
+            background: var(--boot-bg, #f1f1f1);
+        }
+    </style>
+    <script>
+        (function () {
+            var resolvedTheme = "dark";
+            try {
+                var savedTheme = localStorage.getItem("yw-theme");
+                if (savedTheme === "light" || savedTheme === "dark") {
+                    resolvedTheme = savedTheme;
+                } else {
+                    resolvedTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+                }
+            } catch (error) {
+                resolvedTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+            }
+
+            var bootBg = resolvedTheme === "light" ? "#f1f1f1" : "#09090b";
+            document.documentElement.dataset.theme = resolvedTheme;
+            document.documentElement.style.setProperty("--boot-bg", bootBg);
+            document.documentElement.style.backgroundColor = bootBg;
+            document.documentElement.style.colorScheme = resolvedTheme;
+        })();
+    </script>
+    <link rel="icon" type="image/png" href="/assets/boy.png">
     <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <!-- 引入 Phosphor Icons 用于图标 -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
-
-    <!-- 加载层 -->
-    <div id="loader">
-        <div class="text-center">
-            <div class="overflow-hidden mb-4">
-                <span id="loader-text" class="block font-['Space_Grotesk'] text-[10px] tracking-[0.8em] uppercase opacity-0">Initializing Homepage</span>
-            </div>
-            <div class="w-64 h-[1px] bg-white/5 relative mx-auto">
-                <div class="loader-bar"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 转场聚拢文字层 -->
-    <div id="trans-layer">
-        <div class="trans-word">VOID</div>
-    </div>
-
-    <!-- 鼠标与背景 -->
-    <div id="cursor"></div>
-    <div class="vignette"></div>
-    <canvas id="bg-canvas" class="fixed inset-0 z-0"></canvas>
-
-    <!-- 全局导航 -->
-    <nav id="main-nav" class="fixed top-0 left-0 w-full p-8 md:p-12 z-[5000] flex justify-between items-center mix-blend-difference opacity-0 pointer-events-none">
-        <h1 class="text-lg font-['Space_Grotesk'] font-bold tracking-tighter cursor-hover pointer-events-auto" data-scene-link="home" onclick="switchView('home', 'RETURN')">Y.WANG</h1>
-        <div class="hidden md:flex gap-10 pointer-events-auto">
-            <button onclick="switchView('home', 'HOME')" data-scene-link="home" class="deco-text cursor-hover hover:text-white transition-colors">Home</button>
-            <button onclick="switchView('about', 'IDENTITY')" data-scene-link="about" class="deco-text cursor-hover hover:text-white transition-colors">About</button>
-            <button onclick="switchView('projects', 'WORKS')" data-scene-link="projects" class="deco-text cursor-hover hover:text-white transition-colors">Projects</button>
-            <button onclick="switchView('media', 'GALLERY')" data-scene-link="media" class="deco-text cursor-hover hover:text-white transition-colors">Media</button>
-            <button onclick="switchView('links', 'LINKS')" data-scene-link="links" class="deco-text cursor-hover hover:text-white transition-colors">Links</button>
-            <button onclick="switchView('contact', 'CONTACT')" data-scene-link="contact" class="deco-text cursor-hover hover:text-white transition-colors">Contact</button>
-        </div>
-        <button id="mobile-nav-toggle" class="mobile-nav-toggle md:hidden pointer-events-auto cursor-hover" aria-label="打开导航" aria-expanded="false" aria-controls="mobile-nav-drawer">
-            <i class="ph ph-list text-2xl"></i>
-        </button>
-    </nav>
-
-    <div id="mobile-nav-drawer" class="mobile-nav-drawer md:hidden" aria-hidden="true">
-        <div class="mobile-nav-backdrop" data-mobile-close></div>
-        <div class="mobile-nav-panel">
-            <div class="mobile-nav-header">
-                <div class="deco-text text-white/50">Navigation</div>
-                <button class="mobile-nav-close cursor-hover" onclick="closeMobileNav()" aria-label="关闭导航">
-                    <i class="ph ph-x text-2xl"></i>
-                </button>
-            </div>
-            <div class="mobile-nav-links">
-                <button class="mobile-nav-link" data-scene-link="home" onclick="switchView('home', 'HOME')">Home</button>
-                <button class="mobile-nav-link" data-scene-link="about" onclick="switchView('about', 'IDENTITY')">About</button>
-                <button class="mobile-nav-link" data-scene-link="projects" onclick="switchView('projects', 'WORKS')">Projects</button>
-                <button class="mobile-nav-link" data-scene-link="media" onclick="switchView('media', 'GALLERY')">Media</button>
-                <button class="mobile-nav-link" data-scene-link="links" onclick="switchView('links', 'LINKS')">Links</button>
-                <button class="mobile-nav-link" data-scene-link="contact" onclick="switchView('contact', 'CONTACT')">Contact</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Home 视图 -->
-    <section id="home" class="view active">
-        <div class="flex flex-col items-center justify-center min-h-screen text-center px-4 pt-20">
-            <div class="deco-text mb-8 tracking-[0.6em] text-white/30">Established 2026 / Home Edition</div>
-            
-            <div class="title-mask">
-                <h2 class="hero-line text-6xl md:text-[10rem] font-['Space_Grotesk'] font-bold leading-[0.8] tracking-tighter uppercase translate-y-full">
-                    YIXUAN
-                </h2>
-            </div>
-            <div class="title-mask mt-2 md:mt-4">
-                <h2 class="hero-line text-6xl md:text-[10rem] font-['Space_Grotesk'] font-bold leading-[0.8] tracking-tighter uppercase translate-y-full text-purple-500">
-                    WANG.
-                </h2>
-            </div>
-
-            <div class="mt-16 flex flex-col items-center max-w-2xl">
-                <p id="hero-sub" class="text-gray-400 font-light tracking-[0.2em] opacity-0 translate-y-8 leading-relaxed uppercase text-[11px] md:text-xs hero-desc">
-                    Software Developer / 软件开发工程师
-                </p>
-                <p class="mt-6 text-gray-500 font-light text-sm md:text-base leading-relaxed opacity-0 translate-y-8 hero-desc">
-                    用代码构建项目，用旅行记录世界，把个人表达整理成一个持续生长的数字主页。
-                </p>
-                
-                <div class="mt-12 flex flex-wrap justify-center gap-6 opacity-0 translate-y-8 hero-desc">
-                    <button onclick="switchView('projects', 'EXPLORE')" class="cursor-hover group flex items-center gap-3 px-8 py-4 border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-500">
-                        <span class="text-xs tracking-widest uppercase font-medium">查看项目</span>
-                        <i class="ph ph-arrow-up-right group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
-                    </button>
-                    <button onclick="switchView('media', 'WANDER')" class="cursor-hover group flex items-center gap-3 px-8 py-4 border border-transparent bg-white/5 rounded-full hover:bg-white/10 transition-all duration-500">
-                        <span class="text-xs tracking-widest uppercase font-medium">Media / Gallery</span>
-                        <i class="ph ph-compass text-lg"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 首页下方介绍区 -->
-        <div class="max-w-6xl mx-auto px-6 pb-32">
-            <div class="w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent mb-20"></div>
-            
-            <div class="text-center mb-16">
-                <div class="deco-text mb-4">Summary</div>
-                <h3 class="text-3xl font-light">我是谁，我在做什么<span class="text-purple-500">.</span></h3>
-                <p class="text-gray-500 mt-4 max-w-2xl mx-auto text-sm">这里先不急着进入页面入口，而是先把我的方向、工作方式和这个站点的存在意义安静地铺开，让首屏从强视觉自然过渡到真实信息。</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <article class="glow-card cursor-hover p-10">
-                    <div class="text-purple-400 font-['Space_Grotesk'] text-xs tracking-widest mb-4">IDENTITY</div>
-                    <h4 class="text-xl mb-3">我是谁</h4>
-                    <p class="text-gray-400 text-sm leading-relaxed">王一轩，软件开发工程师。希望用更完整的网站结构，把项目、内容和个人路线长期整理下去。</p>
-                </article>
-                <article class="glow-card cursor-hover p-10">
-                    <div class="text-purple-400 font-['Space_Grotesk'] text-xs tracking-widest mb-4">DIRECTION</div>
-                    <h4 class="text-xl mb-3">我在做什么</h4>
-                    <p class="text-gray-400 text-sm leading-relaxed">持续打磨个人项目，完善 Web 开发能力，同时把旅行记录和平台内容整合到统一出口。</p>
-                </article>
-                <article class="glow-card cursor-hover p-10">
-                    <div class="text-purple-400 font-['Space_Grotesk'] text-xs tracking-widest mb-4">POSITION</div>
-                    <h4 class="text-xl mb-3">这个站点是什么</h4>
-                    <p class="text-gray-400 text-sm leading-relaxed">它既是个人主页，也是承接作品展示、旅行影像和平台更新的长期数字入口。</p>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- About 视图 -->
-    <section id="about" class="view">
-        <div class="max-w-6xl mx-auto px-6 pt-40">
-            <div class="mb-20">
-                <div class="deco-text mb-4">About Me</div>
-                <h2 class="text-5xl md:text-7xl font-['Space_Grotesk'] font-bold tracking-tighter mb-6">PROFILE<span class="text-purple-500">.</span></h2>
-                <p class="text-gray-400 text-lg max-w-2xl leading-relaxed">这一页聚焦我的自我介绍、技术方向、技能栈和个人定位，让网站不只是一个视觉入口，也是一份持续更新的个人说明书。</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-20">
-                <div>
-                    <h3 class="text-2xl mb-4">个人简介</h3>
-                    <p class="text-gray-400 leading-relaxed">我是王一轩，软件开发工程师，主要围绕前端、后端和 Web 开发展开工作。除了构建页面和服务，我也在持续整理自己的项目表达、旅行记录和平台内容，希望把它们沉淀成一个真实可用的个人主页系统。</p>
-                </div>
-                <div class="glow-card p-10">
-                    <div class="text-4xl font-['Space_Grotesk'] text-white/10 absolute top-6 right-6 font-bold">01</div>
-                    <h3 class="text-xl mb-4 relative z-10">我的工作方式</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed relative z-10 mb-6">我比较关注结构、节奏和完整度，习惯把想法拆成可以落地的页面、模块和流程，而不是只停留在概念层。</p>
-                    <div class="flex gap-3 relative z-10">
-                        <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">长期主义</span>
-                        <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">工程化思维</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-10 deco-text">Skills & Stack</div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-32">
-                <div class="glow-card p-8 cursor-hover">
-                    <div class="text-purple-400 mb-2"><i class="ph ph-browsers text-2xl"></i></div>
-                    <h3 class="text-lg mb-4">界面与交互 (Frontend)</h3>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">React</span>
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">Tailwind</span>
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">GSAP</span>
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">Three.js</span>
-                    </div>
-                </div>
-                <div class="glow-card p-8 cursor-hover">
-                    <div class="text-purple-400 mb-2"><i class="ph ph-database text-2xl"></i></div>
-                    <h3 class="text-lg mb-4">服务与数据 (Backend)</h3>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">Node.js</span>
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">MySQL</span>
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">REST API</span>
-                    </div>
-                </div>
-                <div class="glow-card p-8 cursor-hover">
-                    <div class="text-purple-400 mb-2"><i class="ph ph-cpu text-2xl"></i></div>
-                    <h3 class="text-lg mb-4">工程能力 (Engineering)</h3>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">C++</span>
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">架构拆解</span>
-                        <span class="px-3 py-1 bg-white/5 rounded text-xs text-gray-300">性能优化</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Projects 视图 -->
-    <section id="projects" class="view">
-        <div class="max-w-7xl mx-auto px-6 pt-40">
-            <div class="mb-20">
-                <div class="deco-text mb-4">Featured Projects</div>
-                <h2 class="text-5xl md:text-7xl font-['Space_Grotesk'] font-bold tracking-tighter mb-6">WORKS<span class="text-purple-500">.</span></h2>
-                <p class="text-gray-400 text-lg max-w-2xl leading-relaxed">每个项目都会保留当前网站的暗黑霓虹和发光卡片语言，同时把项目名称、简介、技术栈和链接入口整理清楚。</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-32">
-                <!-- Project 01 -->
-                <article class="glow-card group cursor-hover p-10 flex flex-col justify-between min-h-[300px]">
-                    <div>
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="deco-text text-purple-400">Project 01</div>
-                            <i class="ph ph-arrow-up-right text-2xl text-white/30 group-hover:text-purple-400 transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transform duration-300"></i>
-                        </div>
-                        <h3 class="text-3xl font-bold mb-4">Travel Atlas</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">围绕旅行路线、照片、视频和文字记录搭建的个人内容系统，强调可持续归档与可视化展示。</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">React</span>
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">Node.js</span>
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">MySQL</span>
-                    </div>
-                    <a href="https://github.com/" target="_blank" rel="noreferrer" class="mt-8 inline-flex items-center gap-2 text-sm text-purple-300 hover:text-white transition-colors">
-                        <i class="ph ph-github-logo"></i>
-                        GitHub
-                    </a>
-                </article>
-
-                <!-- Project 02 -->
-                <article class="glow-card group cursor-hover p-10 flex flex-col justify-between min-h-[300px]">
-                    <div>
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="deco-text text-purple-400">Project 02</div>
-                            <i class="ph ph-arrow-up-right text-2xl text-white/30 group-hover:text-purple-400 transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transform duration-300"></i>
-                        </div>
-                        <h3 class="text-3xl font-bold mb-4">Personal Site System</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">个人主页站点系统，用于整合作品展示、平台入口、旅行内容和实验室模块，支持长期维护扩展。</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">HTML</span>
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">Tailwind</span>
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">GSAP</span>
-                    </div>
-                    <a href="https://github.com/" target="_blank" rel="noreferrer" class="mt-8 inline-flex items-center gap-2 text-sm text-purple-300 hover:text-white transition-colors">
-                        <i class="ph ph-github-logo"></i>
-                        GitHub
-                    </a>
-                </article>
-
-                <!-- Project 03 -->
-                <article class="glow-card group cursor-hover p-10 flex flex-col justify-between min-h-[300px]">
-                    <div>
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="deco-text text-purple-400">Project 03</div>
-                            <i class="ph ph-arrow-up-right text-2xl text-white/30 group-hover:text-purple-400 transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transform duration-300"></i>
-                        </div>
-                        <h3 class="text-3xl font-bold mb-4">Creator Dispatch</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">用于整理技术分享、旅行视频脚本和平台内容节奏的内容管理页，是创作侧的中台型项目。</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">Node.js</span>
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">Dashboard</span>
-                    </div>
-                    <a href="https://github.com/" target="_blank" rel="noreferrer" class="mt-8 inline-flex items-center gap-2 text-sm text-purple-300 hover:text-white transition-colors">
-                        <i class="ph ph-github-logo"></i>
-                        GitHub
-                    </a>
-                </article>
-
-                <!-- Project 04 -->
-                <article class="glow-card group cursor-hover p-10 flex flex-col justify-between min-h-[300px]">
-                    <div>
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="deco-text text-purple-400">Project 04</div>
-                            <i class="ph ph-arrow-up-right text-2xl text-white/30 group-hover:text-purple-400 transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transform duration-300"></i>
-                        </div>
-                        <h3 class="text-3xl font-bold mb-4">Realtime Utility Panel</h3>
-                        <p class="text-gray-400 text-sm leading-relaxed mb-6">偏工程化的工具集合，用于实验请求、状态更新和轻量级实时信息展示，适合作为后续实验入口。</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">React</span>
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">WebSocket</span>
-                        <span class="px-3 py-1 border border-white/10 text-xs text-gray-300 rounded">C++</span>
-                    </div>
-                    <a href="https://github.com/" target="_blank" rel="noreferrer" class="mt-8 inline-flex items-center gap-2 text-sm text-purple-300 hover:text-white transition-colors">
-                        <i class="ph ph-github-logo"></i>
-                        GitHub
-                    </a>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- Media 视图 -->
-    <section id="media" class="view">
-        <div class="max-w-7xl mx-auto px-6 pt-40">
-            <div class="mb-20">
-                <div class="deco-text mb-4">Media / Gallery</div>
-                <h2 class="text-5xl md:text-7xl font-['Space_Grotesk'] font-bold tracking-tighter mb-6">MEDIA<span class="text-purple-500">.</span></h2>
-                <p class="text-gray-400 text-lg max-w-2xl leading-relaxed">这里集中放旅行照片和视频内容。照片负责氛围与构图，视频承接更完整的动态记录。</p>
-            </div>
-
-            <!-- 瀑布流/网格照片墙 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-32">
-                <!-- Photo 1 -->
-                <article class="glow-card group cursor-hover p-2 album-card" role="button" tabindex="0" onclick="openAlbum('gongga', event)" onkeydown="handleAlbumKeydown(event, 'gongga')">
-                    <div class="relative aspect-[4/3] overflow-hidden rounded">
-                        <img src="./assets/media/photos/chuanxi/chuanxi-01.jpg" alt="山脉清晨" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transform group-hover:scale-105 transition-all duration-1000">
-                        <div class="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors duration-700"></div>
-                        <div class="absolute bottom-6 left-6 right-6">
-                            <div class="deco-text text-white/80 mb-2">Photo 01 / 川西 · Mountain Notes</div>
-                            <h3 class="text-2xl font-bold text-white">山脉清晨</h3>
-                            <p class="text-white/60 text-sm mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-y-2 group-hover:translate-y-0">川西的第一束光会让空气、湖面和山体一起安静下来。</p>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Photo 2 -->
-                <article class="glow-card group cursor-hover p-2 md:translate-y-16 album-card" role="button" tabindex="0" onclick="openAlbum('coast', event)" onkeydown="handleAlbumKeydown(event, 'coast')">
-                    <div class="relative aspect-[4/3] overflow-hidden rounded">
-                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400&auto=format&fit=crop" alt="海岸线片段" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transform group-hover:scale-105 transition-all duration-1000">
-                        <div class="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors duration-700"></div>
-                        <div class="absolute bottom-6 left-6 right-6">
-                            <div class="deco-text text-white/80 mb-2">Photo 02 / 厦门 · Coast Archive</div>
-                            <h3 class="text-2xl font-bold text-white">海岸线片段</h3>
-                            <p class="text-white/60 text-sm mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-y-2 group-hover:translate-y-0">海边的风和留白适合被慢慢看，而不是快速划过。</p>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Photo 3 -->
-                <article class="glow-card group cursor-hover p-2 album-card" role="button" tabindex="0" onclick="openAlbum('city', event)" onkeydown="handleAlbumKeydown(event, 'city')">
-                    <div class="relative aspect-[4/3] overflow-hidden rounded">
-                        <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=1400&auto=format&fit=crop" alt="城市切面" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transform group-hover:scale-105 transition-all duration-1000">
-                        <div class="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors duration-700"></div>
-                        <div class="absolute bottom-6 left-6 right-6">
-                            <div class="deco-text text-white/80 mb-2">Photo 03 / 上海 · Urban Layers</div>
-                            <h3 class="text-2xl font-bold text-white">城市切面</h3>
-                            <p class="text-white/60 text-sm mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-y-2 group-hover:translate-y-0">建筑、玻璃反光和密度会在放大之后变成第二层节奏。</p>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Photo 4 -->
-                <article class="glow-card group cursor-hover p-2 md:translate-y-16 album-card" role="button" tabindex="0" onclick="openAlbum('night', event)" onkeydown="handleAlbumKeydown(event, 'night')">
-                    <div class="relative aspect-[4/3] overflow-hidden rounded">
-                        <img src="https://images.unsplash.com/photo-1519608487953-e999c86e7455?q=80&w=1400&auto=format&fit=crop" alt="夜路与光" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transform group-hover:scale-105 transition-all duration-1000">
-                        <div class="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors duration-700"></div>
-                        <div class="absolute bottom-6 left-6 right-6">
-                            <div class="deco-text text-white/80 mb-2">Photo 04 / 重庆 · Night Trace</div>
-                            <h3 class="text-2xl font-bold text-white">夜路与光</h3>
-                            <p class="text-white/60 text-sm mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-y-2 group-hover:translate-y-0">夜色会把霓虹和暗面都拉得更深，最适合做成整屏背景。</p>
-                        </div>
-                    </div>
-                </article>
-            </div>
-
-            <div class="mt-10 mb-10 deco-text">Video Clips</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-32">
-                <article class="glow-card group cursor-hover p-3 album-card" role="button" tabindex="0" onclick="openVideoGallery('chuanxiDrive', 0, event)" onkeydown="handleVideoKeydown(event, 'chuanxiDrive', 0)">
-                    <div class="block relative aspect-video overflow-hidden rounded">
-                        <img src="./assets/media/posters/chuanxi-drive/chuanxi-drive-02.jpg" alt="川西自驾视频封面" class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000">
-                        <div class="absolute inset-0 bg-black/40 group-hover:bg-black/15 transition-colors duration-700"></div>
-                        <div class="absolute top-5 right-5 w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white">
-                            <i class="ph ph-play-fill text-xl"></i>
-                        </div>
-                        <div class="absolute bottom-6 left-6 right-6">
-                            <div class="deco-text text-white/80 mb-2">Video 01 / Chuanxi Drive</div>
-                            <h3 class="text-2xl font-bold text-white">川西自驾 · 山路片段</h3>
-                            <p class="text-white/60 text-sm mt-2">点击进入全屏视频，左右切换这一组川西自驾素材，保留路线推进和山路纵深感。</p>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="glow-card group p-3">
-                    <div class="block relative aspect-video overflow-hidden rounded">
-                        <img src="./assets/media/posters/chuanxi-drive/chuanxi-drive-04.jpg" alt="下一组视频预留封面" class="w-full h-full object-cover grayscale opacity-75 transition-all duration-1000">
-                        <div class="absolute inset-0 bg-black/55 transition-colors duration-700"></div>
-                        <div class="absolute top-5 right-5 w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70">
-                            <i class="ph ph-film-slate text-xl"></i>
-                        </div>
-                        <div class="absolute bottom-6 left-6 right-6">
-                            <div class="deco-text text-white/70 mb-2">Video 02 / Reserved</div>
-                            <h3 class="text-2xl font-bold text-white">下一组视频预留位</h3>
-                            <p class="text-white/55 text-sm mt-2">这个卡片先保留给你后面要补充的另一组视频内容，当前不绑定播放逻辑。</p>
-                        </div>
-                    </div>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- Links 视图 -->
-    <section id="links" class="view">
-        <div class="max-w-7xl mx-auto px-6 pt-40">
-            <div class="mb-20">
-                <div class="deco-text mb-4">Links</div>
-                <h2 class="text-5xl md:text-7xl font-['Space_Grotesk'] font-bold tracking-tighter mb-6">LINKS<span class="text-purple-500">.</span></h2>
-                <p class="text-gray-400 text-lg max-w-2xl leading-relaxed">这一页负责平台分发。项目、旅行视频和日常内容会从这里流向不同平台。</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
-                <a href="https://github.com/" target="_blank" rel="noreferrer" class="glow-card cursor-hover p-10 block">
-                    <div class="text-purple-400 mb-4 text-2xl"><i class="ph ph-github-logo"></i></div>
-                    <h3 class="text-2xl mb-3">GitHub</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">放项目源码、实验仓库和更完整的开发记录。</p>
-                </a>
-                <a href="https://www.bilibili.com/" target="_blank" rel="noreferrer" class="glow-card cursor-hover p-10 block">
-                    <div class="text-purple-400 mb-4 text-2xl"><i class="ph ph-television-simple"></i></div>
-                    <h3 class="text-2xl mb-3">Bilibili</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">更适合放旅行视频、项目记录和系列内容更新。</p>
-                </a>
-                <a href="https://www.xiaohongshu.com/" target="_blank" rel="noreferrer" class="glow-card cursor-hover p-10 block">
-                    <div class="text-purple-400 mb-4 text-2xl"><i class="ph ph-book-open-text"></i></div>
-                    <h3 class="text-2xl mb-3">小红书</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">适合图文式旅行记录、生活表达和轻量内容输出。</p>
-                </a>
-                <a href="https://www.douyin.com/" target="_blank" rel="noreferrer" class="glow-card cursor-hover p-10 block">
-                    <div class="text-purple-400 mb-4 text-2xl"><i class="ph ph-tiktok-logo"></i></div>
-                    <h3 class="text-2xl mb-3">抖音</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">用于更短的视频片段和旅行动态切片内容。</p>
-                </a>
-                <a href="mailto:hello@yixuan-placeholder.com" class="glow-card cursor-hover p-10 block">
-                    <div class="text-purple-400 mb-4 text-2xl"><i class="ph ph-envelope-simple"></i></div>
-                    <h3 class="text-2xl mb-3">邮箱</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">如果需要合作、交流项目或联系我，可以从这里进入。</p>
-                </a>
-                <div class="glow-card p-10">
-                    <div class="text-purple-400 mb-4 text-2xl"><i class="ph ph-share-network"></i></div>
-                    <h3 class="text-2xl mb-3">内容分发说明</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">不同平台会承接不同内容：代码、视频、图文和日常更新各有自己的出口。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact 视图 -->
-    <section id="contact" class="view">
-        <div class="max-w-6xl mx-auto px-6 pt-40">
-            <div class="mb-20">
-                <div class="deco-text mb-4">Contact</div>
-                <h2 class="text-5xl md:text-7xl font-['Space_Grotesk'] font-bold tracking-tighter mb-6">CONTACT<span class="text-purple-500">.</span></h2>
-                <p class="text-gray-400 text-lg max-w-2xl leading-relaxed">如果你想交流项目、合作想法或者只是想认识一下我，可以从这里开始联系。</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-                <div class="glow-card p-10">
-                    <div class="text-purple-400 font-['Space_Grotesk'] text-xs tracking-widest mb-4">EMAIL</div>
-                    <h3 class="text-2xl mb-3">hello@yixuan-placeholder.com</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">适合正式合作、项目咨询、技术交流或内容联动。</p>
-                </div>
-                <div class="glow-card p-10">
-                    <div class="text-purple-400 font-['Space_Grotesk'] text-xs tracking-widest mb-4">STATUS</div>
-                    <h3 class="text-2xl mb-3">开放交流中</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">目前更关注个人项目、网站持续迭代、旅行内容整理和 Web 开发相关方向。</p>
-                </div>
-            </div>
-
-            <div class="glow-card p-10 mb-32">
-                <div class="text-purple-400 font-['Space_Grotesk'] text-xs tracking-widest mb-4">TOPICS</div>
-                <h3 class="text-2xl mb-4">可以聊什么</h3>
-                <div class="flex flex-wrap gap-3">
-                    <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">个人网站重构</span>
-                    <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">Web 开发</span>
-                    <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">前后端项目</span>
-                    <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">旅行内容整理</span>
-                    <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">内容表达</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <div id="photo-overlay" onclick="closePhoto()">
-        <button class="overlay-close cursor-hover" onclick="closePhoto(event)" aria-label="关闭相册">✕</button>
-        <button class="overlay-nav-btn overlay-nav-btn--prev cursor-hover" onclick="changePhoto(-1, event)" aria-label="上一张">←</button>
-        <button class="overlay-nav-btn overlay-nav-btn--next cursor-hover" onclick="changePhoto(1, event)" aria-label="下一张">→</button>
-
-        <img id="full-photo" src="" alt="全屏旅行照片" onclick="event.stopPropagation()">
-
-        <div class="photo-overlay__meta">
-            <div id="photo-caption"></div>
-            <div id="photo-index">01 / 01</div>
-        </div>
-    </div>
-
-    <div id="video-overlay" onclick="closeVideo(event)">
-        <button class="overlay-close cursor-hover" onclick="closeVideo(event)" aria-label="关闭视频">✕</button>
-        <button class="overlay-nav-btn overlay-nav-btn--prev cursor-hover" onclick="changeVideo(-1, event)" aria-label="上一个视频">←</button>
-        <button class="overlay-nav-btn overlay-nav-btn--next cursor-hover" onclick="changeVideo(1, event)" aria-label="下一个视频">→</button>
-
-        <div class="video-overlay__stage" onclick="event.stopPropagation()">
-            <video id="full-video" controls playsinline preload="metadata" poster="./assets/media/posters/chuanxi-drive/chuanxi-drive-02.jpg"></video>
-        </div>
-
-        <div class="photo-overlay__meta">
-            <div id="video-caption"></div>
-            <div id="video-index">01 / 01</div>
-        </div>
-    </div>
-
-    <script type="module" src="./assets/js/main.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

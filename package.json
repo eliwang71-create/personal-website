@@ -4,9 +4,18 @@
   "private": true,
   "description": "王一轩的个人网站与访问记录方案",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "track:local": "node server.js"
   },
   "dependencies": {
-    "mysql2": "latest"
+    "@vitejs/plugin-react": "^6.0.1",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.577.0",
+    "mysql2": "latest",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "vite": "^8.0.1"
   }
 }
