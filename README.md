@@ -160,14 +160,46 @@ ADD COLUMN browser VARCHAR(32) NULL;
 - `MYSQL_DATABASE`
 - `MYSQL_SSL`
 
-建议：
+例如使用 Aiven 时，一般会像这样：
 
-- `MYSQL_PORT=3306`
+- `MYSQL_HOST=<your-aiven-host>`
+- `MYSQL_PORT=<your-aiven-port>`
+- `MYSQL_USER=avnadmin`
+- `MYSQL_PASSWORD=<your-aiven-password>`
+- `MYSQL_DATABASE=defaultdb`
 - `MYSQL_SSL=true`
 
 4. 重新部署后，网站访问会自动写入云端 MySQL
 
-## 访问记录查询示例
+## 数据库连接与常用操作
+
+如果你要从本地终端连接云端 MySQL，可以使用 Aiven 提供的命令，格式大致如下：
+
+```bash
+mysql --user avnadmin --password=你的密码 --host 你的host --port 你的端口 defaultdb
+```
+
+连接成功后会看到：
+
+```text
+mysql>
+```
+
+这时就可以直接执行 SQL 查询。
+
+看当前数据库里有哪些表：
+
+```sql
+SHOW TABLES;
+```
+
+看 `visit_logs` 表结构：
+
+```sql
+DESCRIBE visit_logs;
+```
+
+## 访问记录查询手册
 
 看最近访问：
 
@@ -187,11 +219,40 @@ ORDER BY id DESC
 LIMIT 20;
 ```
 
+看最近访问，并直接查看设备、系统、浏览器：
+
+```sql
+SELECT id, ip, path, device_type, os, browser, visited_at
+FROM visit_logs
+ORDER BY id DESC
+LIMIT 20;
+```
+
 如果你已经给表补了设备字段，可以这样查：
 
 ```sql
 SELECT id, ip, path, device_type, os, browser, visited_at
 FROM visit_logs
+ORDER BY id DESC
+LIMIT 20;
+```
+
+看某个页面最近被谁访问过：
+
+```sql
+SELECT id, ip, path, referer, device_type, os, browser, visited_at
+FROM visit_logs
+WHERE path = '/#media'
+ORDER BY id DESC
+LIMIT 20;
+```
+
+看某个来源最近带来了哪些访问：
+
+```sql
+SELECT id, ip, path, referer, visited_at
+FROM visit_logs
+WHERE referer LIKE '%buildspace.top%'
 ORDER BY id DESC
 LIMIT 20;
 ```
@@ -205,6 +266,43 @@ GROUP BY path
 ORDER BY visits DESC;
 ```
 
+看最近 24 小时页面访问次数：
+
+```sql
+SELECT path, COUNT(*) AS visits
+FROM visit_logs
+WHERE visited_at >= NOW() - INTERVAL 1 DAY
+GROUP BY path
+ORDER BY visits DESC;
+```
+
+看设备类型分布：
+
+```sql
+SELECT device_type, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY device_type
+ORDER BY visits DESC;
+```
+
+看操作系统分布：
+
+```sql
+SELECT os, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY os
+ORDER BY visits DESC;
+```
+
+看浏览器分布：
+
+```sql
+SELECT browser, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY browser
+ORDER BY visits DESC;
+```
+
 看来源分布：
 
 ```sql
@@ -213,6 +311,51 @@ FROM visit_logs
 GROUP BY referer
 ORDER BY visits DESC;
 ```
+
+看访客 IP 分布：
+
+```sql
+SELECT ip, COUNT(*) AS visits
+FROM visit_logs
+GROUP BY ip
+ORDER BY visits DESC;
+```
+
+看今天的访问总数：
+
+```sql
+SELECT COUNT(*) AS today_visits
+FROM visit_logs
+WHERE DATE(visited_at) = CURDATE();
+```
+
+看最近一次访问：
+
+```sql
+SELECT *
+FROM visit_logs
+ORDER BY id DESC
+LIMIT 1;
+```
+
+删除所有测试数据：
+
+```sql
+DELETE FROM visit_logs;
+```
+
+重置自增 ID：
+
+```sql
+ALTER TABLE visit_logs AUTO_INCREMENT = 1;
+```
+
+## 时间与设备说明
+
+- `visited_at` 现在按中国时区 `Asia/Shanghai` 写入
+- 旧数据如果是在修正前写入的，时间可能还是旧时区
+- `device_type / os / browser` 只有在你为表添加了对应字段之后，新访问才会写入
+- 你仍然可以通过 `user_agent` 查看完整原始设备字符串
 
 ## 素材管理
 
