@@ -89,6 +89,18 @@ const PROJECT_SLIDE_VARIANTS = {
 };
 
 const PHOTO_SLIDE_VARIANTS_MOBILE = {
+    enter: {
+        opacity: 0
+    },
+    center: {
+        opacity: 1
+    },
+    exit: {
+        opacity: 0
+    }
+};
+
+const PHOTO_IMAGE_VARIANTS_MOBILE = {
     enter: (direction) => ({
         x: direction > 0 ? 44 : -44,
         opacity: 0
@@ -645,7 +657,6 @@ function PhotoOverlay({ overlayState, onClose, onChange, onJump }) {
                                         transition={
                                             isMobilePhotoOverlay
                                                 ? {
-                                                      x: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
                                                       opacity: { duration: 0.18 }
                                                   }
                                                 : {
@@ -654,17 +665,42 @@ function PhotoOverlay({ overlayState, onClose, onChange, onJump }) {
                                                       scale: { duration: 0.22 }
                                                   }
                                         }
-                                        drag="x"
-                                        dragConstraints={{ left: 0, right: 0 }}
-                                        dragElastic={isMobilePhotoOverlay ? 0.08 : 0.18}
-                                        onDragEnd={handleDragEnd}
+                                        drag={isMobilePhotoOverlay ? false : "x"}
+                                        dragConstraints={isMobilePhotoOverlay ? undefined : { left: 0, right: 0 }}
+                                        dragElastic={isMobilePhotoOverlay ? undefined : 0.18}
+                                        onDragEnd={isMobilePhotoOverlay ? undefined : handleDragEnd}
                                     >
                                         <motion.article
                                             className="photo-iris-card"
                                             layoutId={shouldUseSharedLayout ? `album-card-${album.key}` : undefined}
                                         >
                                             <div className="photo-iris-frame">
-                                                <img src={imageSrc} alt={album.title} className="photo-iris-image theme-adaptive-image" loading="eager" decoding="async" fetchPriority="high" />
+                                                {isMobilePhotoOverlay ? (
+                                                    <motion.img
+                                                        key={`${album.key}-${overlayState.index}-image`}
+                                                        src={imageSrc}
+                                                        alt={album.title}
+                                                        className="photo-iris-image theme-adaptive-image"
+                                                        loading="eager"
+                                                        decoding="async"
+                                                        fetchPriority="high"
+                                                        custom={direction}
+                                                        variants={PHOTO_IMAGE_VARIANTS_MOBILE}
+                                                        initial="enter"
+                                                        animate="center"
+                                                        exit="exit"
+                                                        transition={{
+                                                            x: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+                                                            opacity: { duration: 0.18 }
+                                                        }}
+                                                        drag="x"
+                                                        dragConstraints={{ left: 0, right: 0 }}
+                                                        dragElastic={0.08}
+                                                        onDragEnd={handleDragEnd}
+                                                    />
+                                                ) : (
+                                                    <img src={imageSrc} alt={album.title} className="photo-iris-image theme-adaptive-image" loading="eager" decoding="async" fetchPriority="high" />
+                                                )}
                                                 <div className="photo-iris-image__shade"></div>
                                                 <div className="photo-iris-image__meta">
                                                     <div className="photo-iris-image__label">{album.label}</div>
