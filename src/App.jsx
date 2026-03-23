@@ -46,6 +46,11 @@ const CURSOR_BASE_SIZE = 8;
 const CURSOR_HOVER_SIZE = 48;
 
 const PROJECT_TONE_STYLES = {
+    slate: {
+        accent: "#d6d3d1",
+        accentSoft: "rgba(214, 211, 209, 0.14)",
+        gradient: "linear-gradient(145deg, rgba(18, 18, 20, 0.98) 0%, rgba(44, 44, 47, 0.94) 52%, rgba(108, 102, 94, 0.88) 100%)"
+    },
     violet: {
         accent: "#c084fc",
         accentSoft: "rgba(192, 132, 252, 0.18)",
@@ -233,7 +238,7 @@ function ProjectPreviewArtwork({ project, immersive = false }) {
 
     return (
         <div
-            className={`project-artwork ${immersive ? "project-artwork--immersive" : ""}`}
+            className={`project-artwork project-artwork--${project.heroTone} ${immersive ? "project-artwork--immersive" : ""}`}
             style={{
                 "--project-accent": tone.accent,
                 "--project-accent-soft": tone.accentSoft,
@@ -290,7 +295,7 @@ function ProjectsView({ onOpenProject }) {
                     <div className="project-card__content">
                         <ProjectPreviewArtwork project={project} />
                         <div className="project-card__header">
-                            <div className="deco-text text-purple-400">{project.indexLabel}</div>
+                            <div className="deco-text">{project.indexLabel}</div>
                             <div className="project-card__cta">
                                 <span>Open Preview</span>
                                 <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
@@ -865,7 +870,7 @@ function ActiveView({ activeView, onSwitchView, onOpenAlbum, onOpenVideoGallery,
                             PROFILE<span className="text-purple-500">.</span>
                         </h2>
                         <p className="text-gray-400 text-lg max-w-2xl leading-relaxed">
-                            这一页聚焦我的自我介绍、技术方向、技能栈和个人定位，让网站不只是一个视觉入口，也是一份持续更新的个人说明书。
+                            这里主要放我的个人背景、会用的技术，以及我现在在做的事情。
                         </p>
                     </div>
 
@@ -880,11 +885,11 @@ function ActiveView({ activeView, onSwitchView, onOpenAlbum, onOpenVideoGallery,
                             <div className="text-4xl font-['Space_Grotesk'] text-white/10 absolute top-6 right-6 font-bold">01</div>
                             <h3 className="text-xl mb-4 relative z-10">我的工作方式</h3>
                             <p className="text-gray-400 text-sm leading-relaxed relative z-10 mb-6">
-                                我比较关注结构、节奏和完整度，习惯把想法拆成可以落地的页面、模块和流程，而不是只停留在概念层。
+                                我做项目时会先把结构理顺，再去补交互和细节，尽量把事情做完整，而不是只做一个表面效果。
                             </p>
                             <div className="flex gap-3 relative z-10">
-                                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">长期主义</span>
-                                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">工程化思维</span>
+                                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">重视结构</span>
+                                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-purple-300">把事做完</span>
                             </div>
                         </div>
                     </div>
@@ -1054,7 +1059,7 @@ function ActiveView({ activeView, onSwitchView, onOpenAlbum, onOpenVideoGallery,
                                 animate={{ opacity: homeEntryReady ? 1 : 0, y: homeEntryReady ? 0 : 24 }}
                                 transition={{ duration: 0.95, delay: homeEntryReady ? 0.86 : 0, ease: VIEW_TRANSITION.ease }}
                             >
-                                用代码构建项目，用旅行记录世界，把个人表达整理成一个持续生长的数字主页。
+                                我会做项目，也喜欢拍路上的东西，这个网站就是把这些内容慢慢整理到一起。
                             </motion.p>
 
                             <motion.div
@@ -1090,7 +1095,7 @@ function ActiveView({ activeView, onSwitchView, onOpenAlbum, onOpenVideoGallery,
                                 我是谁，我在做什么<span className="text-purple-500">.</span>
                             </h3>
                             <p className="text-gray-500 mt-4 max-w-2xl mx-auto text-sm">
-                                这里先不急着进入页面入口，而是先把我的方向、工作方式和这个站点的存在意义安静地铺开，让首屏从强视觉自然过渡到真实信息。
+                                这部分想先把我在做什么、平时怎么做项目，以及为什么要做这个网站说清楚。
                             </p>
                         </div>
 

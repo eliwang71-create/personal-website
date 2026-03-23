@@ -1,0 +1,60 @@
+<mxfile host="app.diagrams.net" modified="2026-03-24T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="ai-assisted-workflow" name="AI Assisted Workflow">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="网站开发流程（含 AI 辅助环节）" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="520" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="从素材输入到访问记录反馈的 6 个阶段。AI 主要参与中间环节，最终方案和落地由人工完成。" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#4B5563;" vertex="1" parent="1">
+          <mxGeometry x="60" y="78" width="760" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="n1" value="1. 原始素材输入&#xa;项目经历、照片、视频、链接、个人介绍、展示目标" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#1F2937;fillColor=#F3F4F6;fontSize=14;fontColor=#111827;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="180" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" value="2. 问题定义与目标确认&#xa;拆解内容分散、表达不清、浏览路径不明确等问题" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#1F2937;fillColor=#F9FAFB;fontSize=14;fontColor=#111827;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="330" y="180" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" value="3. AI 辅助生成与方案比较&#xa;栏目拆解、文案草稿、交互思路、页面结构建议" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#312E81;fillColor=#E0E7FF;fontSize=14;fontColor=#111827;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="600" y="180" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" value="4. 人工判断与内容取舍&#xa;筛选、改写、统一语气，决定最终结构和交互轻重" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#1F2937;fillColor=#F9FAFB;fontSize=14;fontColor=#111827;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="870" y="180" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="n5" value="5. 页面实现与上线部署&#xa;前端实现、联调、访问记录接入、上线发布" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#1F2937;fillColor=#F3F4F6;fontSize=14;fontColor=#111827;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="180" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="n6" value="6. 访问记录反馈与持续迭代&#xa;观察路径、设备、来源与页面效果，继续调整" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#065F46;fillColor=#D1FAE5;fontSize=14;fontColor=#111827;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="1410" y="180" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="aiNote" value="AI 主要用在拆解问题、起草文案、比较方案和辅助开发这几步；最后的取舍和实现还是人工完成。" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;strokeColor=#312E81;fillColor=#EEF2FF;fontSize=13;fontColor=#312E81;spacing=14;" vertex="1" parent="1">
+          <mxGeometry x="690" y="360" width="320" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B7280;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n1" target="n2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B7280;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n2" target="n3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4F46E5;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n3" target="n4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B7280;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n4" target="n5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6B7280;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n5" target="n6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="feedback" value="反馈闭环" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=12;fontColor=#065F46;" edge="1" parent="1" source="n6" target="n2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1520" y="500" />
+              <mxPoint x="440" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
