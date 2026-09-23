@@ -94,8 +94,31 @@ export const VIDEO_GALLERIES = {
 
 export const PROJECTS = [
     {
-        key: "personal-site-system",
+        key: "kaiwu-studio-devscope",
         indexLabel: "Project 01",
+        title: "开物工作室 · DevScope",
+        status: "开发中",
+        heroTone: "violet",
+        heroIcon: "ph-wrench",
+        summary: "筹备开物工作室，并推进 DevScope：一款面向 Windows C++ / Qt 开发者的本地诊断工作台。",
+        overview:
+            "开物工作室是我发起并负责推进的软件产品工作室，从真实问题出发规划和构建可用的数字工具。当前重点项目 DevScope 面向 Windows C++ / Qt 开发者，计划把常用开发工具、系统信息、网络诊断和网络监控整合到一个本地工作台中。项目正在开发推进，产品尚未正式发布。",
+        role: "发起并负责推进开物工作室筹备与 DevScope 产品规划、需求梳理和开发推进。",
+        stack: ["Windows", "C++", "Qt", "本地诊断工具"],
+        whatIDid: [
+            "围绕 Windows C++ / Qt 开发者的日常诊断需求梳理产品方向和使用场景。",
+            "持续完善 DevScope 详细 PRD，明确首版 Dashboard、Developer Toolbox、System Information、Network Diagnostic 和 Network Monitor 的范围。",
+            "推进开物工作室及 DevScope 的产品与开发工作，聚焦本地运行和实际使用体验。"
+        ],
+        result: [
+            "DevScope 处于开发推进阶段，当前围绕产品需求和首版实现持续迭代。",
+            "产品尚未正式发布，目前没有对外提供可用版本。"
+        ],
+        links: []
+    },
+    {
+        key: "personal-site-system",
+        indexLabel: "Project 02",
         title: "个人内容整理与展示网站",
         heroTone: "slate",
         heroIcon: "ph-circles-four",
@@ -161,7 +184,7 @@ export const PROJECTS = [
     },
     {
         key: "real-time-snake-engine",
-        indexLabel: "Project 02",
+        indexLabel: "Project 03",
         title: "Real Time Snake Engine",
         heroTone: "indigo",
         heroIcon: "ph-game-controller",
@@ -194,7 +217,7 @@ export const PROJECTS = [
     },
     {
         key: "memory-pool",
-        indexLabel: "Project 03",
+        indexLabel: "Project 04",
         title: "Memory Pool",
         heroTone: "emerald",
         heroIcon: "ph-cpu",
@@ -227,7 +250,7 @@ export const PROJECTS = [
     },
     {
         key: "geely-internship-practice",
-        indexLabel: "Project 04",
+        indexLabel: "Project 05",
         title: "吉利汽车研究院实习实践",
         heroTone: "amber",
         heroIcon: "ph-car-profile",

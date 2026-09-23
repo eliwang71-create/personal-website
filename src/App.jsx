@@ -45,34 +45,6 @@ const IS_TOUCH_DEVICE =
 const CURSOR_BASE_SIZE = 8;
 const CURSOR_HOVER_SIZE = 48;
 
-const PROJECT_TONE_STYLES = {
-    slate: {
-        accent: "#d6d3d1",
-        accentSoft: "rgba(214, 211, 209, 0.14)",
-        gradient: "linear-gradient(145deg, rgba(18, 18, 20, 0.98) 0%, rgba(44, 44, 47, 0.94) 52%, rgba(108, 102, 94, 0.88) 100%)"
-    },
-    violet: {
-        accent: "#c084fc",
-        accentSoft: "rgba(192, 132, 252, 0.18)",
-        gradient: "linear-gradient(135deg, rgba(14, 14, 18, 0.98) 0%, rgba(75, 29, 149, 0.92) 100%)"
-    },
-    indigo: {
-        accent: "#818cf8",
-        accentSoft: "rgba(129, 140, 248, 0.18)",
-        gradient: "linear-gradient(135deg, rgba(11, 14, 22, 0.98) 0%, rgba(49, 46, 129, 0.92) 100%)"
-    },
-    emerald: {
-        accent: "#34d399",
-        accentSoft: "rgba(52, 211, 153, 0.18)",
-        gradient: "linear-gradient(135deg, rgba(11, 16, 15, 0.98) 0%, rgba(6, 95, 70, 0.92) 100%)"
-    },
-    amber: {
-        accent: "#fbbf24",
-        accentSoft: "rgba(251, 191, 36, 0.18)",
-        gradient: "linear-gradient(135deg, rgba(20, 16, 10, 0.98) 0%, rgba(146, 64, 14, 0.92) 100%)"
-    }
-};
-
 const PROJECT_SWIPE_THRESHOLD = 9000;
 
 const PROJECT_SLIDE_VARIANTS = {
@@ -229,38 +201,6 @@ function getIrisOrigin(x = window.innerWidth / 2, y = window.innerHeight / 2) {
     };
 }
 
-function getProjectToneStyle(tone) {
-    return PROJECT_TONE_STYLES[tone] || PROJECT_TONE_STYLES.violet;
-}
-
-function ProjectPreviewArtwork({ project, immersive = false }) {
-    const tone = getProjectToneStyle(project.heroTone);
-
-    return (
-        <div
-            className={`project-artwork project-artwork--${project.heroTone} ${immersive ? "project-artwork--immersive" : ""}`}
-            style={{
-                "--project-accent": tone.accent,
-                "--project-accent-soft": tone.accentSoft,
-                "--project-gradient": tone.gradient
-            }}
-        >
-            <div className="project-artwork__noise"></div>
-            <div className="project-artwork__halo"></div>
-            <div className="project-artwork__grid"></div>
-            <div className="project-artwork__content">
-                <div className="project-artwork__eyebrow">{project.indexLabel}</div>
-                <h4 className="project-artwork__title">{project.title}</h4>
-                <div className="project-artwork__meta">
-                    <span>{project.stack[0]}</span>
-                    <span>{project.stack[1] || project.stack[0]}</span>
-                    <span>{project.stack[2] || project.stack[0]}</span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 function ProjectDetailLinks({ links, interactive = true }) {
     return (
         <div className="project-links">
@@ -293,9 +233,11 @@ function ProjectsView({ onOpenProject }) {
                     onClick={(event) => onOpenProject(index, event)}
                 >
                     <div className="project-card__content">
-                        <ProjectPreviewArtwork project={project} />
                         <div className="project-card__header">
-                            <div className="deco-text">{project.indexLabel}</div>
+                            <div className="project-card__meta">
+                                <div className="deco-text">{project.indexLabel}</div>
+                                {project.status ? <span className="project-card__status">{project.status}</span> : null}
+                            </div>
                             <div className="project-card__cta">
                                 <span>Open Preview</span>
                                 <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
@@ -423,10 +365,6 @@ function ProjectOverlay({ overlayState, onClose, onChange, onJump }) {
                                             className="project-iris-card"
                                             layoutId={shouldUseSharedLayout ? `project-card-${project.key}` : undefined}
                                         >
-                                            <div className="project-iris-card__visual">
-                                                <ProjectPreviewArtwork project={project} immersive />
-                                            </div>
-
                                             <div className="project-iris-card__body">
                                                 <div className="project-iris-card__intro">
                                                     <div className="project-iris-card__eyebrow">{project.indexLabel}</div>
@@ -859,7 +797,88 @@ function VideoOverlay({ overlayState, onClose, onChange }) {
     );
 }
 
-function ActiveView({ activeView, onSwitchView, onOpenAlbum, onOpenVideoGallery, onOpenProject, homeEntryReady }) {
+function HomeSectionHeading({ label, title, description }) {
+    return (
+        <div className="mb-10">
+            <div className="deco-text mb-4">{label}</div>
+            <h3 className="text-3xl md:text-4xl font-['Space_Grotesk'] font-bold tracking-tighter">
+                {title}<span className="text-purple-500">.</span>
+            </h3>
+            {description ? <p className="text-gray-500 mt-4 max-w-2xl text-sm leading-relaxed">{description}</p> : null}
+        </div>
+    );
+}
+
+function NowSection() {
+    const items = [
+        {
+            label: "BUILDING",
+            title: "筹备开物工作室，推进 DevScope",
+            text: "围绕 Windows C++ / Qt 开发者的诊断需求，梳理产品方向并推进本地诊断工作台的首版开发。产品尚未正式发布。"
+        },
+        {
+            label: "LEARNING",
+            title: "补齐工程化能力",
+            text: "围绕 React、Node、MySQL、C++ 项目继续做真实练习，不只停留在页面效果。"
+        },
+        {
+            label: "WRITING",
+            title: "记录过程和判断",
+            text: "把做项目时的取舍、踩坑和复盘沉淀到项目说明里，让网站不仅展示结果，也保留过程。"
+        }
+    ];
+
+    return (
+        <section className="mb-24">
+            <HomeSectionHeading label="Now / Working On" title="现在正在推进" description="这部分让访问者更快理解我当前的方向，而不是只看到一个静态作品集。" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {items.map((item) => (
+                    <article key={item.label} className="glow-card p-8">
+                        <div className="text-purple-400 font-['Space_Grotesk'] text-xs tracking-widest mb-4">{item.label}</div>
+                        <h4 className="text-xl mb-3">{item.title}</h4>
+                        <p className="text-gray-400 text-sm leading-relaxed">{item.text}</p>
+                    </article>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function ExploreMoreSection({ onSwitchView }) {
+    const entries = [
+        { key: "projects", label: "WORKS", title: "项目与实践", text: "查看个人网站、桌面项目、底层练习和实习实践。", icon: "ph-squares-four" },
+        { key: "media", label: "MEDIA", title: "旅行影像", text: "进入照片和视频记录，看路上的内容和画面整理。", icon: "ph-compass" },
+        { key: "links", label: "LINKS", title: "平台入口", text: "跳转到 GitHub、技术站点和内容平台。", icon: "ph-link" },
+        { key: "contact", label: "CONTACT", title: "联系我", text: "合作、交流或项目咨询可以从这里开始。", icon: "ph-paper-plane-tilt" }
+    ];
+
+    return (
+        <section className="mb-32">
+            <HomeSectionHeading label="Explore More" title="从这里继续看" description="Home 作为总入口，下面这些卡片把你带到更完整的页面。" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {entries.map((entry) => (
+                    <button key={entry.key} type="button" className="glow-card cursor-hover p-8 text-left" onClick={() => onSwitchView(entry.key, entry.label)}>
+                        <div className="text-purple-400 mb-4 text-2xl">
+                            <i className={`ph ${entry.icon}`}></i>
+                        </div>
+                        <div className="deco-text mb-3">{entry.label}</div>
+                        <h4 className="text-xl mb-3">{entry.title}</h4>
+                        <p className="text-gray-400 text-sm leading-relaxed">{entry.text}</p>
+                    </button>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function ActiveView({
+    activeView,
+    onSwitchView,
+    onOpenAlbum,
+    onOpenVideoGallery,
+    onOpenProject,
+    homeEntryReady
+}) {
     switch (activeView) {
         case "about":
             return (
@@ -947,7 +966,7 @@ function ActiveView({ activeView, onSwitchView, onOpenAlbum, onOpenVideoGallery,
                             WORKS<span className="text-purple-500">.</span>
                         </h2>
                         <p className="text-gray-400 text-lg max-w-2xl leading-relaxed">
-                            这里收拢了我正在持续维护的个人站点、两类工程化项目，以及一段把需求真正推进到交付的实习实践。
+                            这里收录个人项目与实践，也记录我正在筹备的开物工作室和 DevScope 产品。
                         </p>
                     </div>
                     <ProjectsView onOpenProject={onOpenProject} />
@@ -1115,6 +1134,11 @@ function ActiveView({ activeView, onSwitchView, onOpenAlbum, onOpenVideoGallery,
                                 <h4 className="text-xl mb-3">这个站点是什么</h4>
                                 <p className="text-gray-400 text-sm leading-relaxed">它既是个人主页，也是承接作品展示、旅行影像和平台更新的长期数字入口。</p>
                             </article>
+                        </div>
+
+                        <div className="mt-24">
+                            <NowSection />
+                            <ExploreMoreSection onSwitchView={onSwitchView} />
                         </div>
                     </div>
                 </>
